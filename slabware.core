@@ -1,0 +1,36 @@
+CAPI=2:
+name: craigjb:soundslab:slabware:0.1.0
+description: SoundSlab gateware
+
+filesets:
+  tcl:
+    file_type: tclSource
+    depend:
+      [craigjb::zynq_ps7]
+
+  rtl:
+    files:
+      - Slabware.v
+    file_type: verilogSource
+
+  xdc:
+    files:
+      - data/slabware.xdc
+    file_type: xdc
+
+targets:
+  default:
+    default_tool: vivado
+    toplevel: Slabware
+    filesets: [tcl, rtl, xdc]
+    generate: [zynq_ps7]
+    tools:
+      vivado:
+        part: xc7z010clg400-1
+
+generate:
+  zynq_ps7:
+    generator : zynq_ps7_gen
+    parameters:
+        zynq_config_file: zynq_config.yml
+        spinal_hdl_output_path: hw/spinal/slabware/ZynqPs.scala

@@ -1,0 +1,52 @@
+*.class
+*.log
+*.bak
+
+# fusesoc
+build/
+
+# sbt specific
+.cache/
+.history/
+.lib/
+dist/*
+target
+lib_managed/
+src_managed/
+project/boot/
+project/project
+project/plugins/project/
+
+# Scala-IDE specific
+.scala_dependencies
+.worksheet
+.bloop
+
+.idea
+out
+
+# Metals
+.metals
+project/metals.sbt
+
+# Eclipse
+bin/
+.classpath
+.project
+.settings
+.cache-main
+
+#User
+/*.vhd
+/*.v
+/*.v*.bin
+/vivado*
+*.cf
+*.json
+*.vcd
+!tester/src/test/resources/*.vhd
+
+
+simWorkspace/
+tmp/
+null
