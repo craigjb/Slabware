@@ -16,6 +16,7 @@ filesets:
   xdc:
     files:
       - data/slabware.xdc
+      - data/SlabVideo.xdc
     file_type: xdc
 
 targets:
@@ -25,4 +26,4 @@ targets:
     filesets: [tcl, rtl, xdc]
     tools:
       vivado:
-        part: xc7a200tfbg767-2
+        part: xc7a200t-fbg676-2

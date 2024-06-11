@@ -21,14 +21,19 @@ object LcdDim {
       defaultDuty: Double,
       enable: Bool,
       pwmOut: Bool,
-      bus: BusSlaveFactory,
-      addrOffset: BigInt
+      busSlaveFactory: Option[BusSlaveFactory] = None,
+      addrOffset: BigInt = 0
   ) = {
     val dimPeriod = LcdDim.periodReg(counterWidth, defaultPeriod)
-    bus.readAndWrite(dimPeriod, addrOffset, 0)
-
     val dimDuty = LcdDim.dutyReg(counterWidth, defaultDuty)
-    bus.readAndWrite(dimDuty, addrOffset + 4, 0)
+
+    busSlaveFactory match {
+      case Some(bus) => {
+        bus.readAndWrite(dimPeriod, addrOffset, 0)
+        bus.readAndWrite(dimDuty, addrOffset + 4, 0)
+      }
+      case None => {}
+    }
 
     val dim = new LcdDim(counterWidth = 8)
     dim.io.enable := enable

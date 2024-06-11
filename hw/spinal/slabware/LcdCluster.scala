@@ -44,12 +44,20 @@ object LcdCluster {
 
   def apply(
       broadcastFifoDepth: Int,
-      spiBus: SpiBus,
+      scl: Bool,
+      sda: Bool,
+      dc: Bool,
+      dsa: Bool,
+      dsb: Bool,
       broadcastIn: Flow[Bits],
       frameEnable: Bool
   ): LcdCluster = {
     val lcdCluster = new LcdCluster(broadcastFifoDepth)
-    spiBus := lcdCluster.io.spiBus
+    scl := lcdCluster.io.spiBus.scl
+    sda := lcdCluster.io.spiBus.sda
+    dc := lcdCluster.io.spiBus.dc
+    dsa := lcdCluster.io.spiBus.cs(0)
+    dsb := lcdCluster.io.spiBus.cs(1)
     lcdCluster.io.broadcastIn << broadcastIn
     lcdCluster.io.frameEnable := frameEnable
     lcdCluster
