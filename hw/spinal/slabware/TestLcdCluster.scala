@@ -10,9 +10,7 @@ object TestLcdCluster extends App {
 
   SimConfig.withWave
     .compile(
-      new LcdCluster(
-        broadcastFifoDepth = 8
-      )
+      new LcdCluster()
     )
     .doSim { dut =>
       dut.io.broadcastIn.valid #= false

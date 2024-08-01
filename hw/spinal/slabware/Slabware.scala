@@ -5,12 +5,8 @@ import spinal.lib._
 import spinal.lib.bus.amba4.axi._
 
 class Slabware(
-    dimCounterWidth: BigInt,
-    dimPeriodDefault: BigInt,
-    dimDutyDefault: Double,
-    broadcastFifoDepth: Int,
-    numSpiClusters: Int = 36,
-    numLcdDims: Int = 9
+    numLcdDims: Int = 9,
+    numSpiClusters: Int = 18
 ) extends Component {
 
   val io = new Bundle {
@@ -20,6 +16,9 @@ class Slabware(
     // 8 Debug LEDs
     val LED = out Bits (8 bits)
 
+    // Backlight PWM lines
+    val DIM = out Bits (numLcdDims bits)
+
     // LCD SPI interfaces
     val RESET = out Bool ()
     val SDA = out Bits (numSpiClusters bits)
@@ -28,132 +27,73 @@ class Slabware(
     val DSA = out Bits (numSpiClusters bits)
     val DSB = out Bits (numSpiClusters bits)
 
-    // Backlight PWM lines
-    val DIM = out Bits (numLcdDims bits)
-
     // Button matrix
-    val BTNCOL = out Bits (18 bits)
-    val BTNROW = in Bits (8 bits)
+    // val BTNCOL = out Bits (18 bits)
+    // val BTNROW = in Bits (8 bits)
   }
   noIoPrefix()
 
-  io.LED.setAll()
-  io.RESET := False
-  io.BTNCOL.setAll()
-
-  val spiClockDomain = ClockDomain(
+  val sysClockDomain = ClockDomain(
     clock = io.SYSCLK,
     config = ClockDomainConfig(
       clockEdge = RISING,
       resetKind = BOOT,
       resetActiveLevel = HIGH
+    ),
+    frequency = FixedFrequency(HertzNumber(100e6))
+  )
+
+  val sysClockArea = new ClockingArea(sysClockDomain) {
+    val clockGen = new ClockGen(
+      multiplier = 10.0,
+      divider = 1,
+      clkOutDivider = 20
     )
+  }
+
+  val spiClockDomain = ClockDomain(
+    clock = sysClockArea.clockGen.io.clkOut,
+    reset = sysClockArea.clockGen.io.locked,
+    config = ClockDomainConfig(
+      clockEdge = RISING,
+      resetKind = ASYNC,
+      resetActiveLevel = LOW
+    ),
+    frequency = sysClockArea.clockGen.clkOutFreq
   )
 
   val spiClockArea = new ClockingArea(spiClockDomain) {
-    val lcdBroadcastWord = Flow(Bits(9 bits))
-    lcdBroadcastWord.setIdle()
-    val lcdFrameEnable = False
+    val leds = RegInit(B"8'x55")
+    val counter = Counter(100000000)
 
-    val lcdClusters = Range(0, numSpiClusters)
-      .map(index => {
-        val cluster = LcdCluster(
-          broadcastFifoDepth,
-          scl = io.SCL(index),
-          sda = io.SDA(index),
-          dc = io.DC(index),
-          dsa = io.DSA(index),
-          dsb = io.DSB(index),
-          broadcastIn = lcdBroadcastWord,
-          frameEnable = lcdFrameEnable
-        )
-        cluster.io.frameDataStream.setIdle()
-        cluster
-      })
+    counter.increment()
+    when(counter.willOverflow) {
+      leds := ~leds
+    }
 
     val backlightEnable = True
     val lcdDims = Range(0, numLcdDims)
       .map(index =>
         LcdDim(
-          counterWidth = dimCounterWidth,
-          defaultPeriod = dimPeriodDefault,
-          defaultDuty = dimDutyDefault,
           enable = backlightEnable,
           pwmOut = io.DIM(index)
         )
       )
 
-    val wordLoaded = RegInit(False)
-    when(!wordLoaded) {
-      lcdBroadcastWord.push(B"9'x1FF")
-      wordLoaded := True
-    }
+    val grid = SlabGrid(
+      lcdReset = io.RESET,
+      scl = io.SCL,
+      sda = io.SDA,
+      dc = io.DC,
+      dsa = io.DSA,
+      dsb = io.DSB,
+      numSpiClusters = numSpiClusters
+    )
+
+    val slabControl = new SlabControl()
   }
 
-  // val axiClockArea = new ClockingArea(spiClockDomain) {
-  //   val memByteCount = 128 * 128 * 2
-  //   val memWordCount = memByteCount / 4
-  //   val frameMem = Mem(
-  //     Bits(32 bits),
-  //     Utils.read32BitMemFromFile("benedict.bin", memWordCount)
-  //   )
-
-  //   val axiConfig = ZynqPs.mAxiGpConfig
-  //   val frameMemAxi4ReadOnly =
-  //     Axi4SharedOnChipRamPort(config = axiConfig, ram = frameMem).axi
-  //   frameMemAxi4ReadOnly.writeData.setIdle()
-  //   frameMemAxi4ReadOnly.writeRsp.setBlocked()
-  //   frameMemAxi4ReadOnly.sharedCmd.write := False
-
-  //   val enabled = BufferCC(spiClockArea.lcdFrameEnable)
-  //   val currentCluster = RegInit(U(0, log2Up(lcdClusters.length) bits))
-
-  //   for (clusterIndex <- 0 until lcdClusters.length) {
-  //     val cluster = lcdClusters(clusterIndex)
-  //     val clusterFifo = StreamFifoCC(
-  //       dataType = cluster.io.frameDataStream.payloadType,
-  //       depth = frameDataFifoDepth,
-  //       pushClock = spiClockDomain,
-  //       popClock = spiClockDomain
-  //     )
-  //     clusterFifo.io.pop >> cluster.io.frameDataStream
-
-  //     val clusterNeedsData =
-  //       clusterFifo.io.pushOccupancy <= (frameDataFifoDepth - 16)
-  //     val clusterReadAddress = RegInit(U(0, 32 bits))
-
-  //     when(currentCluster === clusterIndex) {
-  //       frameMemAxi4ReadOnly.sharedCmd.addr := clusterReadAddress
-  //       frameMemAxi4ReadOnly.sharedCmd.id := clusterIndex
-  //     }
-  //   }
-
-  //   val memByteCount = 128 * 128 * 2
-  //   val memWordCount = memByteCount / 4
-  //   val frameMem = Mem(
-  //     Bits(32 bits),
-  //     Utils.read32BitMemFromFile("benedict.bin", memWordCount)
-  //   )
-  //   for (cluster <- lcdClusters) {
-  //     val addr = RegInit(U(0, (log2Up(memWordCount - 1) bits)))
-  //     val valid = RegNext(True).init(False)
-  //     val data = RegInit(B(0, 32 bits))
-
-  //     data := frameMem.readSync(addr.resized)
-
-  //     cluster.io.frameDataStream.valid := valid
-  //     cluster.io.frameDataStream.payload := data
-
-  //     when(!spiClockArea.lcdFrameEnable) {
-  //       valid := False
-  //       addr := 0
-  //     } otherwise {
-  //       when(cluster.io.frameDataStream.fire) {
-  //         addr := addr + 1
-  //       }
-  //     }
-  //   }
-  // }
+  io.LED := spiClockArea.slabControl.io.leds
 }
 
 object TopLevelVerilog {
@@ -162,10 +102,8 @@ object TopLevelVerilog {
       inlineRom = true
     ).generateVerilog(
       new Slabware(
-        dimCounterWidth = 8,
-        dimPeriodDefault = BigInt(2).pow(8) - 1,
-        dimDutyDefault = 0.5,
-        broadcastFifoDepth = 8
+        numLcdDims = 9,
+        numSpiClusters = 36
       )
     )
   }

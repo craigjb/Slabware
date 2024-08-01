@@ -5,27 +5,35 @@ import spinal.lib._
 import spinal.lib.bus.misc._
 
 object LcdDim {
-  def periodReg(counterWidth: BigInt, defaultPeriod: BigInt) = {
+  def periodReg(
+      counterWidth: BigInt,
+      defaultPeriod: BigInt
+  ) = {
     RegInit(U(defaultPeriod, counterWidth bits))
   }
 
-  def dutyReg(counterWidth: BigInt, defaultDuty: Double) = {
+  def dutyReg(
+      counterWidth: BigInt,
+      defaultDuty: Double
+  ) = {
     val period = BigInt(2).pow(counterWidth.toInt)
     val duty = (period.toDouble * defaultDuty).toInt
     RegInit(U(duty, counterWidth bits))
   }
 
   def apply(
-      counterWidth: BigInt,
-      defaultPeriod: BigInt,
-      defaultDuty: Double,
       enable: Bool,
       pwmOut: Bool,
       busSlaveFactory: Option[BusSlaveFactory] = None,
-      addrOffset: BigInt = 0
+      addrOffset: BigInt = 0,
+      counterWidth: BigInt = 8,
+      defaultPeriod: BigInt = BigInt(2).pow(8) - 1,
+      defaultDuty: Double = 0.5
   ) = {
     val dimPeriod = LcdDim.periodReg(counterWidth, defaultPeriod)
+    dimPeriod.allowUnsetRegToAvoidLatch
     val dimDuty = LcdDim.dutyReg(counterWidth, defaultDuty)
+    dimDuty.allowUnsetRegToAvoidLatch
 
     busSlaveFactory match {
       case Some(bus) => {
@@ -45,7 +53,7 @@ object LcdDim {
   }
 }
 
-class LcdDim(counterWidth: BigInt) extends Component {
+class LcdDim(counterWidth: BigInt = 8) extends Component {
   assert(counterWidth > 0, "LcdDim counter width must be at least one bit")
   assert(counterWidth <= 32, "LcdDim counter width must be ≤ 32 bits")
 
@@ -56,7 +64,7 @@ class LcdDim(counterWidth: BigInt) extends Component {
     val duty = in UInt (counterWidth bits)
   }
 
-  val prescaler = RegInit(U(0, 5 bits))
+  val prescaler = RegInit(U(0, 2 bits))
   prescaler := prescaler + 1
 
   val counter = RegInit(U(0, counterWidth bits))

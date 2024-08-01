@@ -121,6 +121,7 @@ set_property -dict { \
 set_property -dict { \
     PACKAGE_PIN AC1 \
     IOSTANDARD LVCMOS33 \
+    DRIVE 4 \
   } [get_ports { LED[7] }];
 set_property -dict { \
     PACKAGE_PIN AC16 \
@@ -161,10 +162,12 @@ set_property -dict { \
 set_property -dict { \
     PACKAGE_PIN AD1 \
     IOSTANDARD LVCMOS33 \
+    DRIVE 4 \
   } [get_ports { LED[6] }];
 set_property -dict { \
     PACKAGE_PIN AD3 \
     IOSTANDARD LVCMOS33 \
+    DRIVE 4 \
   } [get_ports { LED[3] }];
 set_property -dict { \
     PACKAGE_PIN AD4 \
@@ -209,14 +212,17 @@ set_property -dict { \
 set_property -dict { \
     PACKAGE_PIN AE1 \
     IOSTANDARD LVCMOS33 \
+    DRIVE 4 \
   } [get_ports { LED[5] }];
 set_property -dict { \
     PACKAGE_PIN AE2 \
     IOSTANDARD LVCMOS33 \
+    DRIVE 4 \
   } [get_ports { LED[4] }];
 set_property -dict { \
     PACKAGE_PIN AE3 \
     IOSTANDARD LVCMOS33 \
+    DRIVE 4 \
   } [get_ports { LED[2] }];
 set_property -dict { \
     PACKAGE_PIN AE5 \
@@ -253,10 +259,12 @@ set_property -dict { \
 set_property -dict { \
     PACKAGE_PIN AF2 \
     IOSTANDARD LVCMOS33 \
+    DRIVE 4 \
   } [get_ports { LED[1] }];
 set_property -dict { \
     PACKAGE_PIN AF3 \
     IOSTANDARD LVCMOS33 \
+    DRIVE 4 \
   } [get_ports { LED[0] }];
 set_property -dict { \
     PACKAGE_PIN AF20 \

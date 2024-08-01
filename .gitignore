@@ -50,3 +50,4 @@ bin/
 simWorkspace/
 tmp/
 null
+cpu.yaml

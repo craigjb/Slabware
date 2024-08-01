@@ -40,37 +40,29 @@ object LcdCluster {
     val scl = Bool()
     val sda = Bool()
     val dc = Bool()
-  }
 
-  def apply(
-      broadcastFifoDepth: Int,
-      scl: Bool,
-      sda: Bool,
-      dc: Bool,
-      dsa: Bool,
-      dsb: Bool,
-      broadcastIn: Flow[Bits],
-      frameEnable: Bool
-  ): LcdCluster = {
-    val lcdCluster = new LcdCluster(broadcastFifoDepth)
-    scl := lcdCluster.io.spiBus.scl
-    sda := lcdCluster.io.spiBus.sda
-    dc := lcdCluster.io.spiBus.dc
-    dsa := lcdCluster.io.spiBus.cs(0)
-    dsb := lcdCluster.io.spiBus.cs(1)
-    lcdCluster.io.broadcastIn << broadcastIn
-    lcdCluster.io.frameEnable := frameEnable
-    lcdCluster
+    def drive(
+        ioScl: Bool,
+        ioSda: Bool,
+        ioDc: Bool,
+        ioDsa: Bool,
+        ioDsb: Bool
+    ) = {
+      ioScl := scl
+      ioSda := sda
+      ioDc := dc
+      ioDsa := cs(0)
+      ioDsb := cs(1)
+    }
   }
 }
 
-class LcdCluster(broadcastFifoDepth: Int) extends Component {
+class LcdCluster() extends Component {
   import LcdCluster._
 
   val io = new Bundle {
     val spiBus = out(SpiBus())
-    val broadcastBusy = out Bool ()
-    val broadcastIn = slave(Flow(Bits(9 bits)))
+    val broadcastIn = slave(Stream(Bits(9 bits)))
     val frameEnable = in Bool ()
     val frameDataStream = slave(Stream(Bits(32 bits)))
   }
@@ -85,13 +77,7 @@ class LcdCluster(broadcastFifoDepth: Int) extends Component {
   lcdSpi.io.input.payload.data := lcdSpiDataIn
   lcdSpi.io.input.payload.isCmd := lcdSpiIsCmd
 
-  val broadcastFifo = StreamFifo(
-    dataType = Bits(9 bits),
-    depth = broadcastFifoDepth
-  )
-  io.broadcastBusy := broadcastFifo.io.availability === 0
-  broadcastFifo.io.push << io.broadcastIn.toStream
-  val broadcastStream = broadcastFifo.io.pop
+  val broadcastStream = io.broadcastIn
   val broadcastPopReady = RegInit(False)
   broadcastStream.ready := broadcastPopReady
 

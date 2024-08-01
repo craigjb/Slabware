@@ -1,1 +1,6 @@
+set_property BITSTREAM.CONFIG.CONFIGRATE 66 [current_design]
+# set_property CONFIG_MODE SPIx4 [current_design]
+# set_property BITSTREAM.CONFIG.SPI_32BIT_ADDR NO [current_design]
+# set_property BITSTREAM.CONFIG.SPI_BUSWIDTH 4 [current_design]
+
 create_clock -period 10.0 -name SYSCLK [get_ports SYSCLK]
