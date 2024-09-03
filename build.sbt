@@ -9,9 +9,7 @@ val spinalIdslPlugin = compilerPlugin(
   "com.github.spinalhdl" %% "spinalhdl-idsl-plugin" % spinalVersion
 )
 
-lazy val vexRiscv = RootProject(
-  uri("https://github.com/SpinalHDL/VexRiscv.git")
-)
+lazy val vexRiscv = ProjectRef(file("../VexRiscv"), "VexRiscv")
 
 lazy val root = (project in file("."))
   .settings(
