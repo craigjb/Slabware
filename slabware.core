@@ -5,8 +5,6 @@ description: SoundSlab gateware
 filesets:
   tcl:
     file_type: tclSource
-    depend:
-      [craigjb::zynq_ps7]
 
   rtl:
     files:
