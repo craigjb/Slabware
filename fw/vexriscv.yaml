@@ -1,0 +1,18 @@
+name: VexRiscv
+variants:
+- name: VexRiscv
+  cores:
+  - name: core0
+    type: riscv
+    core_access_options: !Riscv
+  jtag:
+    riscv_tunnel:
+      ir_id: 0x23
+      ir_width: 6
+  memory_map:
+  - !Ram
+    range:
+      start: 0x00000000
+      end: 0x00002000
+    cores:
+    - core0
