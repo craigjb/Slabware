@@ -71,7 +71,7 @@ class Slabware(
       leds := ~leds
     }
 
-    val backlightEnable = True
+    val backlightEnable = False
     val lcdDims = Range(0, numLcdDims)
       .map(index =>
         LcdDim(

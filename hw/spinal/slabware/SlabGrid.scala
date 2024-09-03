@@ -152,7 +152,7 @@ class SlabGrid(
           }
           case LcdStep.FrameData => {
             state.onEntry {
-              frameDataEnable := True
+              frameDataEnable := False
             }
           }
         }
