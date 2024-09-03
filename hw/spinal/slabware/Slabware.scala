@@ -30,6 +30,10 @@ class Slabware(
     // Button matrix
     // val BTNCOL = out Bits (18 bits)
     // val BTNROW = in Bits (8 bits)
+
+    // TMDS181 I2c
+    val HDMI_CTL_SDA = in Bool ()
+    val HDMI_CTL_SCL = in Bool ()
   }
   noIoPrefix()
 
