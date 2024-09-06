@@ -7,6 +7,7 @@ import spinal.lib._
 import spinal.lib.bus.amba3.apb._
 import spinal.lib.bus.amba4.axi._
 import spinal.lib.com.uart._
+import spinal.lib.com.i2c._
 import spinal.lib.cpu.riscv.debug.DebugTransportModuleParameter
 import spinal.lib.blackbox.xilinx.s7.BSCANE2
 
@@ -16,6 +17,7 @@ import vexriscv.plugin._
 class SlabControl extends Component {
   val io = new Bundle {
     val leds = out(Bits(8 bits))
+    val i2c = master(I2c())
   }
 
   val sysReset = Bool()
@@ -140,35 +142,40 @@ class SlabControl extends Component {
       dataWidth = 32,
       idWidth = 0
     )
-    val slaveFactory = Apb3SlaveFactory(apbBridge.io.apb)
-    val ledReg = slaveFactory.createReadWrite(Bits(8 bits), 0xf0000000L, 0)
-    io.leds := ledReg
-
-    // val uartCtrl = Apb3UartCtrl(
-    //   UartCtrlMemoryMappedConfig(
-    //     uartCtrlConfig = UartCtrlGenerics(),
-    //     initConfig = UartCtrlInitConfig(
-    //       baudrate = 921600,
-    //       dataLength = 7, // 8 bits
-    //       parity = UartParityType.NONE,
-    //       stop = UartStopType.ONE
-    //     ),
-    //     busCanWriteClockDividerConfig = true,
-    //     busCanWriteFrameConfig = true,
-    //     txFifoDepth = 32,
-    //     rxFifoDepth = 32
-    //   )
-    // )
 
     val axiCrossbar = Axi4CrossbarFactory()
     axiCrossbar.addSlaves(
       ram.io.axi -> (0x00000000L, ram.byteCount),
-      apbBridge.io.axi -> (0xf0000000L, 4 kB)
+      apbBridge.io.axi -> (0xf0000000L, 8 kB)
     )
     axiCrossbar.addConnections(
       iBus -> List(ram.io.axi),
       dBus -> List(ram.io.axi, apbBridge.io.axi)
     )
     axiCrossbar.build()
+
+    val ledCtrl = new Apb3LedCtrl(numLeds = 8)
+    io.leds := ledCtrl.io.leds
+
+    val i2cCtrl = new Apb3I2cCtrl(
+      I2cSlaveMemoryMappedGenerics(
+        ctrlGenerics = I2cSlaveGenerics(
+          samplingWindowSize = 3,
+          samplingClockDividerWidth = 12 bits,
+          timeoutWidth = 20 bits
+        ),
+        addressFilterCount = 0,
+        masterGenerics = I2cMasterMemoryMappedGenerics(timerWidth = 16)
+      )
+    )
+    io.i2c <> i2cCtrl.io.i2c
+
+    val apbDecoder = Apb3Decoder(
+      master = apbBridge.io.apb,
+      slaves = Seq(
+        (ledCtrl.io.apb -> (0x0000, 4 kB)),
+        (i2cCtrl.io.apb -> (0x1000, 4 kB))
+      )
+    )
   }
 }

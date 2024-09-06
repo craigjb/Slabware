@@ -3,6 +3,8 @@ package slabware
 import spinal.core._
 import spinal.lib._
 import spinal.lib.bus.amba4.axi._
+import spinal.lib.io._
+import spinal.lib.blackbox.xilinx.s7.IOBUF
 
 class Slabware(
     numLcdDims: Int = 9,
@@ -32,8 +34,8 @@ class Slabware(
     // val BTNROW = in Bits (8 bits)
 
     // TMDS181 I2c
-    val HDMI_CTL_SDA = in Bool ()
-    val HDMI_CTL_SCL = in Bool ()
+    val HDMI_CTL_SDA = inout(Analog(Bool))
+    val HDMI_CTL_SCL = inout(Analog(Bool))
   }
   noIoPrefix()
 
@@ -98,6 +100,11 @@ class Slabware(
   }
 
   io.LED := spiClockArea.slabControl.io.leds
+
+  val i2cIo = new Area {
+    io.HDMI_CTL_SCL := OpenDrainBuffer(spiClockArea.slabControl.io.i2c.scl)
+    io.HDMI_CTL_SDA := OpenDrainBuffer(spiClockArea.slabControl.io.i2c.sda)
+  }
 }
 
 object TopLevelVerilog {
