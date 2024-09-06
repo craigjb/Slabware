@@ -5,7 +5,7 @@ rustflags = [
   "-C", "link-arg=-Tdefmt.x",
   "-C", "link-arg=--nmagic",
 ]
-runner = '/home/craigjb/Projects/probe-rs/target/release/probe-rs run --chip-description-path vexriscv.yaml --chip=vexriscv'
+runner = 'probe-rs run --chip-description-path vexriscv.yaml --chip=vexriscv'
 
 [build]
 target = "riscv32i-unknown-none-elf"
