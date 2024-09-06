@@ -5,7 +5,7 @@ import spinal.lib._
 import spinal.lib.bus.amba3.apb._
 
 object Apb3LedCtrl{
-  def getApb3Config() = Apb3Config(addressWidth = 1, dataWidth = 32)
+  def getApb3Config() = Apb3Config(addressWidth = 8, dataWidth = 32)
 }
 
 case class Apb3LedCtrl(numLeds: Int) extends Component {

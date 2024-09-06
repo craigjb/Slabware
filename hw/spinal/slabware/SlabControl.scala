@@ -138,7 +138,7 @@ class SlabControl extends Component {
     )
 
     val apbBridge = Axi4SharedToApb3Bridge(
-      addressWidth = 32,
+      addressWidth = 16,
       dataWidth = 32,
       idWidth = 0
     )
