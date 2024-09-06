@@ -1,0 +1,9 @@
+[default.probe]
+protocol = "Jtag"
+
+[default.general]
+chip = "VexRiscv"
+chip_descriptions = ["vexriscv.yaml"]
+
+[default.rtt]
+enabled = true
