@@ -6,20 +6,28 @@ use panic_halt as _;
 use riscv::asm::delay;
 use riscv_rt::entry;
 
+fn set_leds(mask: u32) {
+    unsafe {
+        *(0xf0000000 as *mut u32) = mask;
+    }
+}
+
 #[entry]
 fn main() -> ! {
+    defmt::println!("print from VexRiscv!");
+    defmt::info!("info from VexRiscv!");
+    defmt::warn!("warn from VexRiscv!");
+    defmt::error!("error from VexRiscv!");
+    defmt::debug!("debug from VexRiscv!");
+    defmt::trace!("trace from VexRiscv!");
+
+    let mut mask = 0x80;
     loop {
-        defmt::println!("print from VexRiscv!");
-        delay(1000000);
-        defmt::info!("info from VexRiscv!");
-        delay(1000000);
-        defmt::warn!("warn from VexRiscv!");
-        delay(1000000);
-        defmt::error!("error from VexRiscv!");
-        delay(1000000);
-        defmt::debug!("debug from VexRiscv!");
-        delay(1000000);
-        defmt::trace!("trace from VexRiscv!");
+        set_leds(mask);
+        mask >>= 1;
+        if mask == 0 {
+            mask = 0x80;
+        }
         delay(1000000);
     }
 }
