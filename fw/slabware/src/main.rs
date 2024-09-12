@@ -8,17 +8,18 @@ use riscv_rt::entry;
 
 #[entry]
 fn main() -> ! {
-    let peripherals = slab_pac::Peripherals::take().unwrap();
-
-    defmt::println!("Hello from RISC-V!");
-    let mut mask = 0x80;
     loop {
-        peripherals.leds.data().write(|w| unsafe { w.bits(mask) });
-        mask >>= 1;
-        if mask == 0 {
-            mask = 0x80;
-        }
-        delay(600000);
-        defmt::println!("Hello from RISC-V!");
+        defmt::println!("print from VexRiscv!");
+        delay(1000000);
+        defmt::info!("info from VexRiscv!");
+        delay(1000000);
+        defmt::warn!("warn from VexRiscv!");
+        delay(1000000);
+        defmt::error!("error from VexRiscv!");
+        delay(1000000);
+        defmt::debug!("debug from VexRiscv!");
+        delay(1000000);
+        defmt::trace!("trace from VexRiscv!");
+        delay(1000000);
     }
 }
