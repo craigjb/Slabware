@@ -21,6 +21,9 @@ fn main() -> ! {
     defmt::debug!("debug from VexRiscv!");
     defmt::trace!("trace from VexRiscv!");
 
+    let some_number: u32 = 0xDEADBEEF;
+    defmt::error!("The cow is not well: {:#X}", some_number);
+
     let mut mask = 0x80;
     loop {
         set_leds(mask);
