@@ -26,7 +26,7 @@
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x1</size>
+        <size>0x1000</size>
         <usage>registers</usage>
       </addressBlock>
 
@@ -39,6 +39,330 @@
           <access>read-write</access>
           <resetValue>0x00000000</resetValue>
           <resetMask>0x0000000F</resetMask>
+        </register>
+      </registers>
+    </peripheral>
+
+    <peripheral>
+      <name>I2C</name>
+      <version>1.0</version>
+      <description>I2C controller</description>
+      <groupName>I2C</groupName>
+      <baseAddress>0xf0001000</baseAddress>
+      <size>32</size>
+      <access>read-write</access>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x1000</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>txData</name>
+          <description>I2C transmit data</description>
+          <addressOffset>0x00</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000500</resetValue>
+          <resetMask>0x00000FFF</resetMask>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Transmit data value</description>
+              <bitRange>[7:0]</bitRange>
+              <access>write-only</access>
+            </field>
+            <field>
+              <name>valid</name>
+              <description>Transmit data valid</description>
+              <bitRange>[8:8]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>enable</name>
+              <description>Transmit data enable</description>
+              <bitRange>[9:9]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>repeat</name>
+              <description>Transmit data repeat</description>
+              <bitRange>[10:10]</bitRange>
+              <access>write-only</access>
+            </field>
+            <field>
+              <name>disableOnDataConflict</name>
+              <description>Disable transmit on data conflict</description>
+              <bitRange>[11:11]</bitRange>
+              <access>write-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>txAck</name>
+          <description>I2C transmit acknowledge</description>
+          <addressOffset>0x04</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000500</resetValue>
+          <resetMask>0x00000FFF</resetMask>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Ack value</description>
+              <bitRange>[0:0]</bitRange>
+              <access>write-only</access>
+            </field>
+            <field>
+              <name>valid</name>
+              <description>Ack valid</description>
+              <bitRange>[8:8]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>enable</name>
+              <description>Ack enable</description>
+              <bitRange>[9:9]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>repeat</name>
+              <description>Ack repeat</description>
+              <bitRange>[10:10]</bitRange>
+              <access>write-only</access>
+            </field>
+            <field>
+              <name>disableOnDataConflict</name>
+              <description>Disable ack on data conflict</description>
+              <bitRange>[11:11]</bitRange>
+              <access>write-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>rxData</name>
+          <description>I2C receive data</description>
+          <addressOffset>0x08</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <resetMask>0x000003FF</resetMask>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Receive data value</description>
+              <bitRange>[7:0]</bitRange>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>valid</name>
+              <description>Receive data valid (cleared when read)</description>
+              <bitRange>[8:8]</bitRange>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>listen</name>
+              <description>Receive data listen</description>
+              <bitRange>[9:9]</bitRange>
+              <access>write-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>rxAck</name>
+          <description>I2C receive acknowledge</description>
+          <addressOffset>0x0C</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <resetMask>0x000003FF</resetMask>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Ack value</description>
+              <bitRange>[0:0]</bitRange>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>valid</name>
+              <description>Ack valid (cleared when read)</description>
+              <bitRange>[8:8]</bitRange>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>enable</name>
+              <description>Ack listen</description>
+              <bitRange>[9:9]</bitRange>
+              <access>write-only</access>
+            </field>
+          </fields>
+        </register>
+        <!-- TODO interrupt control regs -->
+        <register>
+          <name>samplingClockDivider</name>
+          <description>I2C sampling clock divider</description>
+          <addressOffset>0x28</addressOffset>
+          <size>32</size>
+          <access>write-only</access>
+          <resetValue>0x00000000</resetValue>
+          <resetMask>0x00000FFF</resetMask>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Sampling clock divisor</description>
+              <bitRange>[11:0]</bitRange>
+              <access>write-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>timeout</name>
+          <description>I2C timeout</description>
+          <addressOffset>0x2C</addressOffset>
+          <size>32</size>
+          <access>write-only</access>
+          <resetValue>0x00000000</resetValue>
+          <resetMask>0x000FFFFF</resetMask>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Timeout clock cycles</description>
+              <bitRange>[19:0]</bitRange>
+              <access>write-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>tsuData</name>
+          <description>I2C transmit data setup time</description>
+          <addressOffset>0x30</addressOffset>
+          <size>32</size>
+          <access>write-only</access>
+          <resetValue>0x00000000</resetValue>
+          <resetMask>0x0000003F</resetMask>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Setup time clock cycles</description>
+              <bitRange>[5:0]</bitRange>
+              <access>write-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>masterStatus</name>
+          <description>I2C master status</description>
+          <addressOffset>0x40</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <resetMask>0x0000001FF</resetMask>
+          <fields>
+            <field>
+              <name>isBusy</name>
+              <description>I2C master is busy</description>
+              <bitRange>[0:0]</bitRange>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>start</name>
+              <description>Order an I2C master start</description>
+              <bitRange>[4:4]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>stop</name>
+              <description>Order an I2C master stop</description>
+              <bitRange>[5:5]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>drop</name>
+              <description>Order an I2C master drop</description>
+              <bitRange>[6:6]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>recover</name>
+              <description>Order an I2C master recover</description>
+              <bitRange>[7:7]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>startDropped</name>
+              <description>I2C timed out during start (cleared on set)</description>
+              <bitRange>[9:9]</bitRange>
+              <access>read-write</access>
+              <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            </field>
+            <field>
+              <name>stopDropped</name>
+              <description>I2C timed out during stop (cleared on set)</description>
+              <bitRange>[10:10]</bitRange>
+              <access>read-write</access>
+              <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            </field>
+            <field>
+              <name>recoverDropped</name>
+              <description>I2C timed out during recover (cleared on set)</description>
+              <bitRange>[11:11]</bitRange>
+              <access>read-write</access>
+              <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>tLow</name>
+          <description>I2C transmit time low</description>
+          <addressOffset>0x50</addressOffset>
+          <size>32</size>
+          <access>write-only</access>
+          <resetValue>0x00000000</resetValue>
+          <resetMask>0x000FFFFF</resetMask>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Low time clock cycles</description>
+              <bitRange>[19:0]</bitRange>
+              <access>write-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>tHigh</name>
+          <description>I2C transmit time high</description>
+          <addressOffset>0x54</addressOffset>
+          <size>32</size>
+          <access>write-only</access>
+          <resetValue>0x00000000</resetValue>
+          <resetMask>0x000FFFFF</resetMask>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>High time clock cycles</description>
+              <bitRange>[19:0]</bitRange>
+              <access>write-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>tBuf</name>
+          <description>I2C transmit idle time</description>
+          <addressOffset>0x58</addressOffset>
+          <size>32</size>
+          <access>write-only</access>
+          <resetValue>0x00000000</resetValue>
+          <resetMask>0x000FFFFF</resetMask>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Idle time clock cycles</description>
+              <bitRange>[19:0]</bitRange>
+              <access>write-only</access>
+            </field>
+          </fields>
         </register>
       </registers>
     </peripheral>
