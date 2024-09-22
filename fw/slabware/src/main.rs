@@ -5,19 +5,20 @@ use defmt_rtt as _;
 use panic_halt as _;
 use riscv::asm::delay;
 use riscv_rt::entry;
-use slab_pac::I2c;
 
-fn i2c_start_blocking(i2c: &I2c) {
+use slab_pac::I2c0;
+
+fn i2c_start_blocking(i2c: &I2c0) {
     i2c.master_status().modify(|_, w| w.start().set_bit());
     while i2c.master_status().read().start().bit_is_set() {}
 }
 
-fn i2c_stop_blocking(i2c: &I2c) {
+fn i2c_stop_blocking(i2c: &I2c0) {
     i2c.master_status().modify(|_, w| w.stop().set_bit());
-    while i2c.master_status().read().is_busy().bit_is_set() {}
+    while i2c.master_status().read().busy().bit_is_set() {}
 }
 
-fn i2c_tx(i2c: &I2c, data: u8) {
+fn i2c_tx(i2c: &I2c0, data: u8) {
     i2c.tx_data().write(|w| unsafe {
         w.valid()
             .set_bit()
@@ -32,7 +33,7 @@ fn i2c_tx(i2c: &I2c, data: u8) {
     });
 }
 
-fn i2c_tx_nack_blocking(i2c: &I2c) {
+fn i2c_tx_nack_blocking(i2c: &I2c0) {
     i2c.tx_ack().write(|w| {
         w.value()
             .set_bit()
@@ -48,7 +49,7 @@ fn i2c_tx_nack_blocking(i2c: &I2c) {
     while i2c.tx_ack().read().valid().bit_is_set() {}
 }
 
-fn i2c_tx_ack_blocking(i2c: &I2c) {
+fn i2c_tx_ack_blocking(i2c: &I2c0) {
     i2c.tx_ack().write(|w| {
         w.value()
             .clear_bit()
@@ -64,18 +65,14 @@ fn i2c_tx_ack_blocking(i2c: &I2c) {
     while i2c.tx_ack().read().valid().bit_is_set() {}
 }
 
-fn i2c_rx_ack(i2c: &I2c) -> bool {
-    i2c.rx_ack().read().value().bit_is_clear()
-}
-
-fn i2c_rx(i2c: &I2c) -> u8 {
+fn i2c_rx(i2c: &I2c0) -> u8 {
     i2c.rx_data().read().value().bits()
 }
 
 #[entry]
 fn main() -> ! {
     let peripherals = slab_pac::Peripherals::take().unwrap();
-    let i2c = peripherals.i2c;
+    let i2c = peripherals.i2c0;
 
     defmt::println!("Configuring I2C clocks");
     let sample_clock_divider = 10; // sample at 10 MHz
@@ -86,9 +83,9 @@ fn main() -> ! {
     i2c.timeout().write(|w| unsafe { w.bits(timeout) });
     defmt::println!("Timeout set: {}", timeout);
     let half_cycle_time = 43;
-    i2c.t_high().write(|w| unsafe { w.bits(half_cycle_time) });
-    i2c.t_low().write(|w| unsafe { w.bits(half_cycle_time) });
-    i2c.t_buf().write(|w| unsafe { w.bits(half_cycle_time) });
+    i2c.thigh().write(|w| unsafe { w.bits(half_cycle_time) });
+    i2c.tlow().write(|w| unsafe { w.bits(half_cycle_time) });
+    i2c.tbuf().write(|w| unsafe { w.bits(half_cycle_time) });
     defmt::println!("tHi, tLow, tBuf set: {}", half_cycle_time);
 
     i2c_start_blocking(&i2c);
@@ -120,7 +117,10 @@ fn main() -> ! {
 
     let mut mask = 0x80;
     loop {
-        peripherals.leds.data().write(|w| unsafe { w.bits(mask) });
+        peripherals
+            .leds
+            .ctrl()
+            .write(|w| unsafe { w.value().bits(mask) });
         mask >>= 1;
         if mask == 0 {
             mask = 0x80;
