@@ -35,26 +35,23 @@ class I2cCtrl[B <: BusDefinition.Bus](
       val event = RegNext(False) init (False)
 
       val RXDATA = busif
-        .newRegAt(0x08, doc = "Receive data")
+        .newReg(doc = "Receive data")
         .setName("rxData")
-      val value = RXDATA.fieldAt(
-        0,
+      val value = RXDATA.field(
         Bits(8 bits),
         AccessType.RO,
         doc = "Receive data value"
       )
       val valueReg = Reg(Bits(8 bits))
       value := valueReg
-      val valid = RXDATA.fieldAt(
-        8,
+      val valid = RXDATA.field(
         Bool(),
         AccessType.RC,
         resetValue = 0,
         doc = "Receive data valid (cleared on read)"
       )
       val listen =
-        RXDATA.fieldAt(
-          9,
+        RXDATA.field(
           Bool(),
           AccessType.WO,
           resetValue = 0,
@@ -64,25 +61,22 @@ class I2cCtrl[B <: BusDefinition.Bus](
 
     val rxAck = new Area {
       val RXACK = busif
-        .newRegAt(0x0c, doc = "Receive acknowledge")
+        .newReg(doc = "Receive acknowledge")
         .setName("rxAck")
-      val value = RXACK.fieldAt(
-        0,
+      val value = RXACK.field(
         Bool(),
         AccessType.RO,
         doc = "Receive acknowledge value"
       )
       val valueReg = Reg(Bool())
       value := valueReg
-      val valid = RXACK.fieldAt(
-        8,
+      val valid = RXACK.field(
         Bool(),
         AccessType.RC,
         resetValue = 0,
         doc = "Receive acknowledge valid (cleared on read)"
       )
-      val listen = RXACK.fieldAt(
-        9,
+      val listen = RXACK.field(
         Bool(),
         AccessType.WO,
         resetValue = 0,
@@ -92,37 +86,32 @@ class I2cCtrl[B <: BusDefinition.Bus](
 
     val txData = new Area {
       val TXDATA = busif
-        .newRegAt(0x00, doc = "Transmit data")
+        .newReg(doc = "Transmit data")
         .setName("txData")
-      val value = TXDATA.fieldAt(
-        0,
+      val value = TXDATA.field(
         Bits(8 bits),
         AccessType.WO,
         doc = "Transmit data value"
       )
-      val valid = TXDATA.fieldAt(
-        8,
+      val valid = TXDATA.field(
         Bool(),
         AccessType.RW,
         resetValue = 1,
         doc = "Transmit data valid"
       )
-      val enable = TXDATA.fieldAt(
-        9,
+      val enable = TXDATA.field(
         Bool(),
         AccessType.RW,
         resetValue = 0,
         doc = "Transmit data enable"
       )
-      val repeat = TXDATA.fieldAt(
-        10,
+      val repeat = TXDATA.field(
         Bool(),
         AccessType.WO,
         resetValue = 1,
         doc = "Transmit data repeat"
       )
-      val disableOnDataConflict = TXDATA.fieldAt(
-        11,
+      val disableOnDataConflict = TXDATA.field(
         Bool(),
         AccessType.WO,
         doc = "Disable on data conflict"
@@ -132,37 +121,32 @@ class I2cCtrl[B <: BusDefinition.Bus](
 
     val txAck = new Area {
       val TXACK = busif
-        .newRegAt(0x04, doc = "Transmit acknowledge")
+        .newReg(doc = "Transmit acknowledge")
         .setName("txAck")
-      val value = TXACK.fieldAt(
-        0,
+      val value = TXACK.field(
         Bool(),
         AccessType.WO,
         doc = "Transmit acknowledge value"
       )
-      val valid = TXACK.fieldAt(
-        8,
+      val valid = TXACK.field(
         Bool(),
         AccessType.RW,
         resetValue = 1,
         doc = "Transmit acknowledge valid"
       )
-      val enable = TXACK.fieldAt(
-        9,
+      val enable = TXACK.field(
         Bool(),
         AccessType.RW,
         resetValue = 0,
         doc = "Transmit acknowledge enable"
       )
-      val repeat = TXACK.fieldAt(
-        10,
+      val repeat = TXACK.field(
         Bool(),
         AccessType.WO,
         resetValue = 1,
         doc = "Transmit acknowledge repeat"
       )
-      val disableOnDataConflict = TXACK.fieldAt(
-        11,
+      val disableOnDataConflict = TXACK.field(
         Bool(),
         AccessType.WO,
         doc = "Disable on data conflict"
@@ -172,57 +156,50 @@ class I2cCtrl[B <: BusDefinition.Bus](
 
     val masterLogic = genMaster generate new Area {
       val MSTAT = busif
-        .newRegAt(0x40, doc = "Master status")
+        .newReg(doc = "Master status")
         .setName("masterStatus")
-      val busy = MSTAT.fieldAt(0, Bool(), AccessType.RO, doc = "Is busy?")
+      val busy = MSTAT.field(Bool(), AccessType.RO, doc = "Is busy?")
       val start =
-        MSTAT.fieldAt(
-          4,
+        MSTAT.field(
           Bool(),
           AccessType.W1S,
           resetValue = 0,
           doc = "Order a start (set on set)"
         )
       val stop =
-        MSTAT.fieldAt(
-          5,
+        MSTAT.field(
           Bool(),
           AccessType.W1S,
           resetValue = 0,
           doc = "Order a stop (set on set)"
         )
       val drop =
-        MSTAT.fieldAt(
-          6,
+        MSTAT.field(
           Bool(),
           AccessType.W1S,
           resetValue = 0,
           doc = "Order a drop (set on set)"
         )
       val recover =
-        MSTAT.fieldAt(
-          7,
+        MSTAT.field(
           Bool(),
           AccessType.W1S,
           resetValue = 0,
           doc = "Order a recover (set on set)"
         )
-      val startDropped = MSTAT.fieldAt(
-        9,
+      val startDropped = MSTAT.field(
         Bool(),
         AccessType.W1C,
         resetValue = 0,
         doc = "Timeout during start"
       )
-      val stopDropped = MSTAT.fieldAt(
-        10,
+      val stopDropped = MSTAT.field(
         Bool(),
         AccessType.W1C,
         resetValue = 0,
         doc = "Timeout during stop"
       )
-      val recoverDropped = MSTAT.fieldAt(
-        11,
+      val recoverDropped = MSTAT.field(
         Bool(),
         AccessType.W1C,
         resetValue = 0,
@@ -232,15 +209,15 @@ class I2cCtrl[B <: BusDefinition.Bus](
       val timer = new Area {
         val value = Reg(UInt(masterGenerics.timerWidth bits))
 
-        val TLOW = busif.newRegAt(0x50, doc = "I2C low timing")
+        val TLOW = busif.newReg(doc = "I2C low timing")
         val tLow =
-          TLOW.fieldAt(0, value, AccessType.WO, doc = "# of cycles low")
-        val THIGH = busif.newRegAt(0x54, doc = "I2C high timing")
+          TLOW.field(value, AccessType.WO, doc = "# of cycles low")
+        val THIGH = busif.newReg(doc = "I2C high timing")
         val tHigh =
-          THIGH.fieldAt(0, value, AccessType.WO, doc = "# of cycles high")
-        val TBUF = busif.newRegAt(0x58, doc = "I2C idle timing")
+          THIGH.field(value, AccessType.WO, doc = "# of cycles high")
+        val TBUF = busif.newReg(doc = "I2C idle timing")
         val tBuf =
-          TBUF.fieldAt(0, value, AccessType.WO, doc = "# of cycles idle")
+          TBUF.field(value, AccessType.WO, doc = "# of cycles idle")
 
         val done = value === 0
 
@@ -523,10 +500,9 @@ class I2cCtrl[B <: BusDefinition.Bus](
     }
 
     val SCD = busif
-      .newRegAt(0x28, doc = "Sampling clock")
+      .newReg(doc = "Sampling clock")
       .setName("samplingClockDivider")
-    val samplingClockDivider = SCD.fieldAt(
-      0,
+    val samplingClockDivider = SCD.field(
       config.samplingClockDivider,
       AccessType.WO,
       resetValue = 0,
@@ -534,9 +510,8 @@ class I2cCtrl[B <: BusDefinition.Bus](
     )
     config.samplingClockDivider := samplingClockDivider
 
-    val TIMEOUT = busif.newRegAt(0x2c, doc = "Timeout")
-    val timeout = TIMEOUT.fieldAt(
-      0,
+    val TIMEOUT = busif.newReg(doc = "Timeout")
+    val timeout = TIMEOUT.field(
       config.timeout,
       AccessType.WO,
       resetValue = 0,
@@ -545,10 +520,9 @@ class I2cCtrl[B <: BusDefinition.Bus](
     config.timeout := timeout
 
     val TSUDATA = busif
-      .newRegAt(0x30, doc = "TSU Data")
+      .newReg(doc = "TSU Data")
       .setName("tsuData")
-    val tsuData = TSUDATA.fieldAt(
-      0,
+    val tsuData = TSUDATA.field(
       config.tsuData,
       AccessType.WO,
       resetValue = 0
@@ -566,30 +540,28 @@ class I2cCtrl[B <: BusDefinition.Bus](
 
     val slaveStatus = new Area {
       val SSTAT = busif
-        .newRegAt(0x44, doc = "Slave status")
+        .newReg(doc = "Slave status")
         .setName("slaveStatus")
-      val inFrame = SSTAT.fieldAt(0, Bool(), AccessType.RO, doc = "In Frame")
+      val inFrame = SSTAT.field(Bool(), AccessType.RO, doc = "In Frame")
       inFrame := internals.inFrame
-      val sdaRead = SSTAT.fieldAt(1, Bool(), AccessType.RO, doc = "SDA read")
+      val sdaRead = SSTAT.field(Bool(), AccessType.RO, doc = "SDA read")
       sdaRead := internals.sdaRead
-      val sclRead = SSTAT.fieldAt(2, Bool(), AccessType.RO, doc = "SCL read")
+      val sclRead = SSTAT.field(Bool(), AccessType.RO, doc = "SCL read")
       sclRead := internals.sclRead
     }
 
     if (genMaster) masterLogic.fsm.build()
     val slaveOverride = new Area {
       val SOVERRIDE = busif
-        .newRegAt(0x48, doc = "Slave override")
+        .newReg(doc = "Slave override")
         .setName("slaveOverride")
-      val sda = SOVERRIDE.fieldAt(
-        1,
+      val sda = SOVERRIDE.field(
         Bool(),
         AccessType.RW,
         resetValue = 1,
         doc = "Force the SDA pin low when cleared"
       )
-      val scl = SOVERRIDE.fieldAt(
-        2,
+      val scl = SOVERRIDE.field(
         Bool(),
         AccessType.RW,
         resetValue = 1,

@@ -38,84 +38,84 @@ impl R {
     pub fn busy(&self) -> BusyR {
         BusyR::new((self.bits & 1) != 0)
     }
-    #[doc = "Bit 4 - Order a start (set on set)"]
+    #[doc = "Bit 1 - Order a start (set on set)"]
     #[inline(always)]
     pub fn start(&self) -> StartR {
-        StartR::new(((self.bits >> 4) & 1) != 0)
+        StartR::new(((self.bits >> 1) & 1) != 0)
     }
-    #[doc = "Bit 5 - Order a stop (set on set)"]
+    #[doc = "Bit 2 - Order a stop (set on set)"]
     #[inline(always)]
     pub fn stop(&self) -> StopR {
-        StopR::new(((self.bits >> 5) & 1) != 0)
+        StopR::new(((self.bits >> 2) & 1) != 0)
     }
-    #[doc = "Bit 6 - Order a drop (set on set)"]
+    #[doc = "Bit 3 - Order a drop (set on set)"]
     #[inline(always)]
     pub fn drop(&self) -> DropR {
-        DropR::new(((self.bits >> 6) & 1) != 0)
+        DropR::new(((self.bits >> 3) & 1) != 0)
     }
-    #[doc = "Bit 7 - Order a recover (set on set)"]
+    #[doc = "Bit 4 - Order a recover (set on set)"]
     #[inline(always)]
     pub fn recover(&self) -> RecoverR {
-        RecoverR::new(((self.bits >> 7) & 1) != 0)
+        RecoverR::new(((self.bits >> 4) & 1) != 0)
     }
-    #[doc = "Bit 9 - Timeout during start"]
+    #[doc = "Bit 5 - Timeout during start"]
     #[inline(always)]
     pub fn start_dropped(&self) -> StartDroppedR {
-        StartDroppedR::new(((self.bits >> 9) & 1) != 0)
+        StartDroppedR::new(((self.bits >> 5) & 1) != 0)
     }
-    #[doc = "Bit 10 - Timeout during stop"]
+    #[doc = "Bit 6 - Timeout during stop"]
     #[inline(always)]
     pub fn stop_dropped(&self) -> StopDroppedR {
-        StopDroppedR::new(((self.bits >> 10) & 1) != 0)
+        StopDroppedR::new(((self.bits >> 6) & 1) != 0)
     }
-    #[doc = "Bit 11 - Timeout during recover"]
+    #[doc = "Bit 7 - Timeout during recover"]
     #[inline(always)]
     pub fn recover_dropped(&self) -> RecoverDroppedR {
-        RecoverDroppedR::new(((self.bits >> 11) & 1) != 0)
+        RecoverDroppedR::new(((self.bits >> 7) & 1) != 0)
     }
 }
 impl W {
-    #[doc = "Bit 4 - Order a start (set on set)"]
+    #[doc = "Bit 1 - Order a start (set on set)"]
     #[inline(always)]
     #[must_use]
     pub fn start(&mut self) -> StartW<MasterStatusSpec> {
-        StartW::new(self, 4)
+        StartW::new(self, 1)
     }
-    #[doc = "Bit 5 - Order a stop (set on set)"]
+    #[doc = "Bit 2 - Order a stop (set on set)"]
     #[inline(always)]
     #[must_use]
     pub fn stop(&mut self) -> StopW<MasterStatusSpec> {
-        StopW::new(self, 5)
+        StopW::new(self, 2)
     }
-    #[doc = "Bit 6 - Order a drop (set on set)"]
+    #[doc = "Bit 3 - Order a drop (set on set)"]
     #[inline(always)]
     #[must_use]
     pub fn drop(&mut self) -> DropW<MasterStatusSpec> {
-        DropW::new(self, 6)
+        DropW::new(self, 3)
     }
-    #[doc = "Bit 7 - Order a recover (set on set)"]
+    #[doc = "Bit 4 - Order a recover (set on set)"]
     #[inline(always)]
     #[must_use]
     pub fn recover(&mut self) -> RecoverW<MasterStatusSpec> {
-        RecoverW::new(self, 7)
+        RecoverW::new(self, 4)
     }
-    #[doc = "Bit 9 - Timeout during start"]
+    #[doc = "Bit 5 - Timeout during start"]
     #[inline(always)]
     #[must_use]
     pub fn start_dropped(&mut self) -> StartDroppedW<MasterStatusSpec> {
-        StartDroppedW::new(self, 9)
+        StartDroppedW::new(self, 5)
     }
-    #[doc = "Bit 10 - Timeout during stop"]
+    #[doc = "Bit 6 - Timeout during stop"]
     #[inline(always)]
     #[must_use]
     pub fn stop_dropped(&mut self) -> StopDroppedW<MasterStatusSpec> {
-        StopDroppedW::new(self, 10)
+        StopDroppedW::new(self, 6)
     }
-    #[doc = "Bit 11 - Timeout during recover"]
+    #[doc = "Bit 7 - Timeout during recover"]
     #[inline(always)]
     #[must_use]
     pub fn recover_dropped(&mut self) -> RecoverDroppedW<MasterStatusSpec> {
-        RecoverDroppedW::new(self, 11)
+        RecoverDroppedW::new(self, 7)
     }
 }
 #[doc = "Master status\n\nYou can [`read`](crate::Reg::read) this register and get [`master_status::R`](R). You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`master_status::W`](W). You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api)."]
@@ -129,7 +129,7 @@ impl crate::Readable for MasterStatusSpec {}
 impl crate::Writable for MasterStatusSpec {
     type Safety = crate::Unsafe;
     const ZERO_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
-    const ONE_TO_MODIFY_FIELDS_BITMAP: u32 = 0x0ef0;
+    const ONE_TO_MODIFY_FIELDS_BITMAP: u32 = 0xfe;
 }
 #[doc = "`reset()` method sets masterStatus to value 0"]
 impl crate::Resettable for MasterStatusSpec {

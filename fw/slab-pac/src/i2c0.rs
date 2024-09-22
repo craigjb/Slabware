@@ -1,88 +1,85 @@
 #[repr(C)]
 #[doc = "Register block"]
 pub struct RegisterBlock {
-    tx_data: TxData,
-    tx_ack: TxAck,
     rx_data: RxData,
     rx_ack: RxAck,
-    _reserved4: [u8; 0x18],
-    sampling_clock_divider: SamplingClockDivider,
-    timeout: Timeout,
-    tsu_data: TsuData,
-    _reserved7: [u8; 0x0c],
+    tx_data: TxData,
+    tx_ack: TxAck,
     master_status: MasterStatus,
-    slave_status: SlaveStatus,
-    slave_override: SlaveOverride,
-    _reserved10: [u8; 0x04],
     tlow: Tlow,
     thigh: Thigh,
     tbuf: Tbuf,
+    sampling_clock_divider: SamplingClockDivider,
+    timeout: Timeout,
+    tsu_data: TsuData,
+    slave_status: SlaveStatus,
+    slave_override: SlaveOverride,
 }
 impl RegisterBlock {
-    #[doc = "0x00 - Transmit data"]
-    #[inline(always)]
-    pub const fn tx_data(&self) -> &TxData {
-        &self.tx_data
-    }
-    #[doc = "0x04 - Transmit acknowledge"]
-    #[inline(always)]
-    pub const fn tx_ack(&self) -> &TxAck {
-        &self.tx_ack
-    }
-    #[doc = "0x08 - Receive data"]
+    #[doc = "0x00 - Receive data"]
     #[inline(always)]
     pub const fn rx_data(&self) -> &RxData {
         &self.rx_data
     }
-    #[doc = "0x0c - Receive acknowledge"]
+    #[doc = "0x04 - Receive acknowledge"]
     #[inline(always)]
     pub const fn rx_ack(&self) -> &RxAck {
         &self.rx_ack
     }
-    #[doc = "0x28 - Sampling clock"]
+    #[doc = "0x08 - Transmit data"]
     #[inline(always)]
-    pub const fn sampling_clock_divider(&self) -> &SamplingClockDivider {
-        &self.sampling_clock_divider
+    pub const fn tx_data(&self) -> &TxData {
+        &self.tx_data
     }
-    #[doc = "0x2c - Timeout"]
+    #[doc = "0x0c - Transmit acknowledge"]
     #[inline(always)]
-    pub const fn timeout(&self) -> &Timeout {
-        &self.timeout
+    pub const fn tx_ack(&self) -> &TxAck {
+        &self.tx_ack
     }
-    #[doc = "0x30 - TSU Data"]
-    #[inline(always)]
-    pub const fn tsu_data(&self) -> &TsuData {
-        &self.tsu_data
-    }
-    #[doc = "0x40 - Master status"]
+    #[doc = "0x10 - Master status"]
     #[inline(always)]
     pub const fn master_status(&self) -> &MasterStatus {
         &self.master_status
     }
-    #[doc = "0x44 - Slave status"]
-    #[inline(always)]
-    pub const fn slave_status(&self) -> &SlaveStatus {
-        &self.slave_status
-    }
-    #[doc = "0x48 - Slave override"]
-    #[inline(always)]
-    pub const fn slave_override(&self) -> &SlaveOverride {
-        &self.slave_override
-    }
-    #[doc = "0x50 - I2C low timing"]
+    #[doc = "0x14 - I2C low timing"]
     #[inline(always)]
     pub const fn tlow(&self) -> &Tlow {
         &self.tlow
     }
-    #[doc = "0x54 - I2C high timing"]
+    #[doc = "0x18 - I2C high timing"]
     #[inline(always)]
     pub const fn thigh(&self) -> &Thigh {
         &self.thigh
     }
-    #[doc = "0x58 - I2C idle timing"]
+    #[doc = "0x1c - I2C idle timing"]
     #[inline(always)]
     pub const fn tbuf(&self) -> &Tbuf {
         &self.tbuf
+    }
+    #[doc = "0x20 - Sampling clock"]
+    #[inline(always)]
+    pub const fn sampling_clock_divider(&self) -> &SamplingClockDivider {
+        &self.sampling_clock_divider
+    }
+    #[doc = "0x24 - Timeout"]
+    #[inline(always)]
+    pub const fn timeout(&self) -> &Timeout {
+        &self.timeout
+    }
+    #[doc = "0x28 - TSU Data"]
+    #[inline(always)]
+    pub const fn tsu_data(&self) -> &TsuData {
+        &self.tsu_data
+    }
+    #[doc = "0x2c - Slave status"]
+    #[inline(always)]
+    pub const fn slave_status(&self) -> &SlaveStatus {
+        &self.slave_status
+    }
+    #[doc = "0x30 - Slave override"]
+    #[inline(always)]
+    pub const fn slave_override(&self) -> &SlaveOverride {
+        &self.slave_override
     }
 }
 #[doc = "rxData (rw) register accessor: Receive data\n\nYou can [`read`](crate::Reg::read) this register and get [`rx_data::R`]. You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`rx_data::W`]. You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@rx_data`]
@@ -115,21 +112,21 @@ module"]
 pub type MasterStatus = crate::Reg<master_status::MasterStatusSpec>;
 #[doc = "Master status"]
 pub mod master_status;
-#[doc = "TLOW (w) register accessor: I2C low timing\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`tlow::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@tlow`]
+#[doc = "tlow (w) register accessor: I2C low timing\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`tlow::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@tlow`]
 module"]
-#[doc(alias = "TLOW")]
+#[doc(alias = "tlow")]
 pub type Tlow = crate::Reg<tlow::TlowSpec>;
 #[doc = "I2C low timing"]
 pub mod tlow;
-#[doc = "THIGH (w) register accessor: I2C high timing\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`thigh::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@thigh`]
+#[doc = "thigh (w) register accessor: I2C high timing\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`thigh::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@thigh`]
 module"]
-#[doc(alias = "THIGH")]
+#[doc(alias = "thigh")]
 pub type Thigh = crate::Reg<thigh::ThighSpec>;
 #[doc = "I2C high timing"]
 pub mod thigh;
-#[doc = "TBUF (w) register accessor: I2C idle timing\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`tbuf::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@tbuf`]
+#[doc = "tbuf (w) register accessor: I2C idle timing\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`tbuf::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@tbuf`]
 module"]
-#[doc(alias = "TBUF")]
+#[doc(alias = "tbuf")]
 pub type Tbuf = crate::Reg<tbuf::TbufSpec>;
 #[doc = "I2C idle timing"]
 pub mod tbuf;
@@ -139,9 +136,9 @@ module"]
 pub type SamplingClockDivider = crate::Reg<sampling_clock_divider::SamplingClockDividerSpec>;
 #[doc = "Sampling clock"]
 pub mod sampling_clock_divider;
-#[doc = "TIMEOUT (w) register accessor: Timeout\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`timeout::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@timeout`]
+#[doc = "timeout (w) register accessor: Timeout\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`timeout::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@timeout`]
 module"]
-#[doc(alias = "TIMEOUT")]
+#[doc(alias = "timeout")]
 pub type Timeout = crate::Reg<timeout::TimeoutSpec>;
 #[doc = "Timeout"]
 pub mod timeout;

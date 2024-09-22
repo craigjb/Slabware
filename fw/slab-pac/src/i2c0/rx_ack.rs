@@ -14,18 +14,18 @@ impl R {
     pub fn value(&self) -> ValueR {
         ValueR::new((self.bits & 1) != 0)
     }
-    #[doc = "Bit 8 - Receive acknowledge valid (cleared on read)"]
+    #[doc = "Bit 1 - Receive acknowledge valid (cleared on read)"]
     #[inline(always)]
     pub fn valid(&self) -> ValidR {
-        ValidR::new(((self.bits >> 8) & 1) != 0)
+        ValidR::new(((self.bits >> 1) & 1) != 0)
     }
 }
 impl W {
-    #[doc = "Bit 9 - Listen for receive acknowledge"]
+    #[doc = "Bit 2 - Listen for receive acknowledge"]
     #[inline(always)]
     #[must_use]
     pub fn listen(&mut self) -> ListenW<RxAckSpec> {
-        ListenW::new(self, 9)
+        ListenW::new(self, 2)
     }
 }
 #[doc = "Receive acknowledge\n\nYou can [`read`](crate::Reg::read) this register and get [`rx_ack::R`](R). You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`rx_ack::W`](W). You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api)."]

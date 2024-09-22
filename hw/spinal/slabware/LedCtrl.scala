@@ -22,11 +22,10 @@ class LedCtrl[B <: BusDefinition.Bus](
   val busif = busDef.createBusInterface(io.bus, (0, 4))
 
   val ctrlReg = busif
-    .newRegAt(0x0, doc = "LED output control")
+    .newReg(doc = "LED output control")
     .setName("CTRL")
   val value =
-    ctrlReg.fieldAt(
-      0,
+    ctrlReg.field(
       Bits(numLeds bits),
       AccessType.RW,
       doc = "LED output value"

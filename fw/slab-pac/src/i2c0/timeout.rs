@@ -1,4 +1,4 @@
-#[doc = "Register `TIMEOUT` writer"]
+#[doc = "Register `timeout` writer"]
 pub type W = crate::W<TimeoutSpec>;
 #[doc = "Field `timeout` writer - Timeout"]
 pub type TimeoutW<'a, REG> = crate::FieldWriter<'a, REG, 20, u32>;
@@ -21,7 +21,7 @@ impl crate::Writable for TimeoutSpec {
     const ZERO_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
     const ONE_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
 }
-#[doc = "`reset()` method sets TIMEOUT to value 0"]
+#[doc = "`reset()` method sets timeout to value 0"]
 impl crate::Resettable for TimeoutSpec {
     const RESET_VALUE: u32 = 0;
 }

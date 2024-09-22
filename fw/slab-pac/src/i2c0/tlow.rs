@@ -1,4 +1,4 @@
-#[doc = "Register `TLOW` writer"]
+#[doc = "Register `tlow` writer"]
 pub type W = crate::W<TlowSpec>;
 #[doc = "Field `tLow` writer - # of cycles low"]
 pub type TLowW<'a, REG> = crate::FieldWriter<'a, REG, 16, u16>;
@@ -21,7 +21,7 @@ impl crate::Writable for TlowSpec {
     const ZERO_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
     const ONE_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
 }
-#[doc = "`reset()` method sets TLOW to value 0"]
+#[doc = "`reset()` method sets tlow to value 0"]
 impl crate::Resettable for TlowSpec {
     const RESET_VALUE: u32 = 0;
 }

@@ -17,15 +17,15 @@ pub type RepeatW<'a, REG> = crate::BitWriter<'a, REG>;
 #[doc = "Field `disableOnDataConflict` writer - Disable on data conflict"]
 pub type DisableOnDataConflictW<'a, REG> = crate::BitWriter<'a, REG>;
 impl R {
-    #[doc = "Bit 8 - Transmit acknowledge valid"]
+    #[doc = "Bit 1 - Transmit acknowledge valid"]
     #[inline(always)]
     pub fn valid(&self) -> ValidR {
-        ValidR::new(((self.bits >> 8) & 1) != 0)
+        ValidR::new(((self.bits >> 1) & 1) != 0)
     }
-    #[doc = "Bit 9 - Transmit acknowledge enable"]
+    #[doc = "Bit 2 - Transmit acknowledge enable"]
     #[inline(always)]
     pub fn enable(&self) -> EnableR {
-        EnableR::new(((self.bits >> 9) & 1) != 0)
+        EnableR::new(((self.bits >> 2) & 1) != 0)
     }
 }
 impl W {
@@ -35,29 +35,29 @@ impl W {
     pub fn value(&mut self) -> ValueW<TxAckSpec> {
         ValueW::new(self, 0)
     }
-    #[doc = "Bit 8 - Transmit acknowledge valid"]
+    #[doc = "Bit 1 - Transmit acknowledge valid"]
     #[inline(always)]
     #[must_use]
     pub fn valid(&mut self) -> ValidW<TxAckSpec> {
-        ValidW::new(self, 8)
+        ValidW::new(self, 1)
     }
-    #[doc = "Bit 9 - Transmit acknowledge enable"]
+    #[doc = "Bit 2 - Transmit acknowledge enable"]
     #[inline(always)]
     #[must_use]
     pub fn enable(&mut self) -> EnableW<TxAckSpec> {
-        EnableW::new(self, 9)
+        EnableW::new(self, 2)
     }
-    #[doc = "Bit 10 - Transmit acknowledge repeat"]
+    #[doc = "Bit 3 - Transmit acknowledge repeat"]
     #[inline(always)]
     #[must_use]
     pub fn repeat(&mut self) -> RepeatW<TxAckSpec> {
-        RepeatW::new(self, 10)
+        RepeatW::new(self, 3)
     }
-    #[doc = "Bit 11 - Disable on data conflict"]
+    #[doc = "Bit 4 - Disable on data conflict"]
     #[inline(always)]
     #[must_use]
     pub fn disable_on_data_conflict(&mut self) -> DisableOnDataConflictW<TxAckSpec> {
-        DisableOnDataConflictW::new(self, 11)
+        DisableOnDataConflictW::new(self, 4)
     }
 }
 #[doc = "Transmit acknowledge\n\nYou can [`read`](crate::Reg::read) this register and get [`tx_ack::R`](R). You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`tx_ack::W`](W). You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api)."]
@@ -73,7 +73,7 @@ impl crate::Writable for TxAckSpec {
     const ZERO_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
     const ONE_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
 }
-#[doc = "`reset()` method sets txAck to value 0x0500"]
+#[doc = "`reset()` method sets txAck to value 0x0a"]
 impl crate::Resettable for TxAckSpec {
-    const RESET_VALUE: u32 = 0x0500;
+    const RESET_VALUE: u32 = 0x0a;
 }

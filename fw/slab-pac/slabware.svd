@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Generated from SpinalHDL. Don't edit. -->
-<!-- Date generated: Sat Sep 21 17:15:14 MST 2024 -->
+<!-- Date generated: Sat Sep 21 19:08:25 MST 2024 -->
 <device schemaVersion="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
   xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_0.xsd">
   <name>slabware</name>
@@ -40,7 +40,7 @@
       <register>
         <name>rxData</name>
         <description>Receive data</description>
-        <addressOffset>0x8</addressOffset>
+        <addressOffset>0x0</addressOffset>
         <size>32</size>
         <resetValue>0x0</resetValue>
         <resetMask>0x3ff</resetMask>
@@ -74,10 +74,10 @@
       <register>
         <name>rxAck</name>
         <description>Receive acknowledge</description>
-        <addressOffset>0xc</addressOffset>
+        <addressOffset>0x4</addressOffset>
         <size>32</size>
         <resetValue>0x0</resetValue>
-        <resetMask>0x301</resetMask>
+        <resetMask>0x7</resetMask>
         <fields>
           <field>
             <name>value</name>
@@ -90,7 +90,7 @@
           <field>
             <name>valid</name>
             <description>Receive acknowledge valid (cleared on read)</description>
-            <bitRange>[8:8]</bitRange>
+            <bitRange>[1:1]</bitRange>
             <access>read-only</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>clear</readAction>
@@ -98,7 +98,7 @@
           <field>
             <name>listen</name>
             <description>Listen for receive acknowledge</description>
-            <bitRange>[9:9]</bitRange>
+            <bitRange>[2:2]</bitRange>
             <access>write-only</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
@@ -108,7 +108,7 @@
       <register>
         <name>txData</name>
         <description>Transmit data</description>
-        <addressOffset>0x0</addressOffset>
+        <addressOffset>0x8</addressOffset>
         <size>32</size>
         <resetValue>0x500</resetValue>
         <resetMask>0xfff</resetMask>
@@ -158,10 +158,10 @@
       <register>
         <name>txAck</name>
         <description>Transmit acknowledge</description>
-        <addressOffset>0x4</addressOffset>
+        <addressOffset>0xc</addressOffset>
         <size>32</size>
-        <resetValue>0x500</resetValue>
-        <resetMask>0xf01</resetMask>
+        <resetValue>0xa</resetValue>
+        <resetMask>0x1f</resetMask>
         <fields>
           <field>
             <name>value</name>
@@ -174,7 +174,7 @@
           <field>
             <name>valid</name>
             <description>Transmit acknowledge valid</description>
-            <bitRange>[8:8]</bitRange>
+            <bitRange>[1:1]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
@@ -182,7 +182,7 @@
           <field>
             <name>enable</name>
             <description>Transmit acknowledge enable</description>
-            <bitRange>[9:9]</bitRange>
+            <bitRange>[2:2]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
@@ -190,7 +190,7 @@
           <field>
             <name>repeat</name>
             <description>Transmit acknowledge repeat</description>
-            <bitRange>[10:10]</bitRange>
+            <bitRange>[3:3]</bitRange>
             <access>write-only</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
@@ -198,7 +198,7 @@
           <field>
             <name>disableOnDataConflict</name>
             <description>Disable on data conflict</description>
-            <bitRange>[11:11]</bitRange>
+            <bitRange>[4:4]</bitRange>
             <access>write-only</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
@@ -208,10 +208,10 @@
       <register>
         <name>masterStatus</name>
         <description>Master status</description>
-        <addressOffset>0x40</addressOffset>
+        <addressOffset>0x10</addressOffset>
         <size>32</size>
         <resetValue>0x0</resetValue>
-        <resetMask>0xef1</resetMask>
+        <resetMask>0xff</resetMask>
         <fields>
           <field>
             <name>busy</name>
@@ -224,7 +224,7 @@
           <field>
             <name>start</name>
             <description>Order a start (set on set)</description>
-            <bitRange>[4:4]</bitRange>
+            <bitRange>[1:1]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>oneToSet</modifiedWriteValues>
             <readAction>modify</readAction>
@@ -232,7 +232,7 @@
           <field>
             <name>stop</name>
             <description>Order a stop (set on set)</description>
-            <bitRange>[5:5]</bitRange>
+            <bitRange>[2:2]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>oneToSet</modifiedWriteValues>
             <readAction>modify</readAction>
@@ -240,7 +240,7 @@
           <field>
             <name>drop</name>
             <description>Order a drop (set on set)</description>
-            <bitRange>[6:6]</bitRange>
+            <bitRange>[3:3]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>oneToSet</modifiedWriteValues>
             <readAction>modify</readAction>
@@ -248,7 +248,7 @@
           <field>
             <name>recover</name>
             <description>Order a recover (set on set)</description>
-            <bitRange>[7:7]</bitRange>
+            <bitRange>[4:4]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>oneToSet</modifiedWriteValues>
             <readAction>modify</readAction>
@@ -256,7 +256,7 @@
           <field>
             <name>startDropped</name>
             <description>Timeout during start</description>
-            <bitRange>[9:9]</bitRange>
+            <bitRange>[5:5]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>oneToClear</modifiedWriteValues>
             <readAction>modify</readAction>
@@ -264,7 +264,7 @@
           <field>
             <name>stopDropped</name>
             <description>Timeout during stop</description>
-            <bitRange>[10:10]</bitRange>
+            <bitRange>[6:6]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>oneToClear</modifiedWriteValues>
             <readAction>modify</readAction>
@@ -272,7 +272,7 @@
           <field>
             <name>recoverDropped</name>
             <description>Timeout during recover</description>
-            <bitRange>[11:11]</bitRange>
+            <bitRange>[7:7]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>oneToClear</modifiedWriteValues>
             <readAction>modify</readAction>
@@ -280,9 +280,9 @@
         </fields>
       </register>
       <register>
-        <name>TLOW</name>
+        <name>tlow</name>
         <description>I2C low timing</description>
-        <addressOffset>0x50</addressOffset>
+        <addressOffset>0x14</addressOffset>
         <size>32</size>
         <resetValue>0x0</resetValue>
         <resetMask>0xffff</resetMask>
@@ -298,9 +298,9 @@
         </fields>
       </register>
       <register>
-        <name>THIGH</name>
+        <name>thigh</name>
         <description>I2C high timing</description>
-        <addressOffset>0x54</addressOffset>
+        <addressOffset>0x18</addressOffset>
         <size>32</size>
         <resetValue>0x0</resetValue>
         <resetMask>0xffff</resetMask>
@@ -316,9 +316,9 @@
         </fields>
       </register>
       <register>
-        <name>TBUF</name>
+        <name>tbuf</name>
         <description>I2C idle timing</description>
-        <addressOffset>0x58</addressOffset>
+        <addressOffset>0x1c</addressOffset>
         <size>32</size>
         <resetValue>0x0</resetValue>
         <resetMask>0xffff</resetMask>
@@ -336,7 +336,7 @@
       <register>
         <name>samplingClockDivider</name>
         <description>Sampling clock</description>
-        <addressOffset>0x28</addressOffset>
+        <addressOffset>0x20</addressOffset>
         <size>32</size>
         <resetValue>0x0</resetValue>
         <resetMask>0xfff</resetMask>
@@ -352,9 +352,9 @@
         </fields>
       </register>
       <register>
-        <name>TIMEOUT</name>
+        <name>timeout</name>
         <description>Timeout</description>
-        <addressOffset>0x2c</addressOffset>
+        <addressOffset>0x24</addressOffset>
         <size>32</size>
         <resetValue>0x0</resetValue>
         <resetMask>0xfffff</resetMask>
@@ -372,7 +372,7 @@
       <register>
         <name>tsuData</name>
         <description>TSU Data</description>
-        <addressOffset>0x30</addressOffset>
+        <addressOffset>0x28</addressOffset>
         <size>32</size>
         <resetValue>0x0</resetValue>
         <resetMask>0x3f</resetMask>
@@ -390,7 +390,7 @@
       <register>
         <name>slaveStatus</name>
         <description>Slave status</description>
-        <addressOffset>0x44</addressOffset>
+        <addressOffset>0x2c</addressOffset>
         <size>32</size>
         <resetValue>0x0</resetValue>
         <resetMask>0x7</resetMask>
@@ -424,15 +424,15 @@
       <register>
         <name>slaveOverride</name>
         <description>Slave override</description>
-        <addressOffset>0x48</addressOffset>
+        <addressOffset>0x30</addressOffset>
         <size>32</size>
-        <resetValue>0x6</resetValue>
-        <resetMask>0x6</resetMask>
+        <resetValue>0x3</resetValue>
+        <resetMask>0x3</resetMask>
         <fields>
           <field>
             <name>sda</name>
             <description>Force the SDA pin low when cleared</description>
-            <bitRange>[1:1]</bitRange>
+            <bitRange>[0:0]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
@@ -440,7 +440,7 @@
           <field>
             <name>scl</name>
             <description>Force the SCL pin low when cleared</description>
-            <bitRange>[2:2]</bitRange>
+            <bitRange>[1:1]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
