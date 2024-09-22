@@ -43,10 +43,7 @@ class SlabControl extends Component {
     new IBusSimplePlugin(
       resetVector = 0x00000000L,
       cmdForkOnSecondStage = false,
-      cmdForkPersistence = true,
-      prediction = NONE,
-      catchAccessFault = false,
-      compressedGen = false
+      cmdForkPersistence = true
     ),
     new DBusSimplePlugin(
       catchAddressMisaligned = false,
@@ -144,9 +141,10 @@ class SlabControl extends Component {
     )
 
     val axiCrossbar = Axi4CrossbarFactory()
+    val apbBase = 0x10000000L
     axiCrossbar.addSlaves(
       ram.io.axi -> (0x00000000L, ram.byteCount),
-      apbBridge.io.axi -> (0xf0000000L, 8 kB)
+      apbBridge.io.axi -> (apbBase, 8 kB)
     )
     axiCrossbar.addConnections(
       iBus -> List(ram.io.axi),
@@ -154,10 +152,11 @@ class SlabControl extends Component {
     )
     axiCrossbar.build()
 
-    val ledCtrl = new Apb3LedCtrl(numLeds = 8)
+    val ledCtrl = new LedCtrl(Apb3Bus, numLeds = 8)
     io.leds := ledCtrl.io.leds
 
-    val i2cCtrl = new Apb3I2cCtrl(
+    val i2cCtrl = new I2cCtrl(
+      Apb3Bus,
       I2cSlaveMemoryMappedGenerics(
         ctrlGenerics = I2cSlaveGenerics(
           samplingWindowSize = 3,
@@ -170,12 +169,28 @@ class SlabControl extends Component {
     )
     io.i2c <> i2cCtrl.io.i2c
 
+    val ledCtrlOffset = 0x0
+
+    val i2cCtrlOffset = 0x1000
     val apbDecoder = Apb3Decoder(
       master = apbBridge.io.apb,
       slaves = Seq(
-        (ledCtrl.io.apb -> (0x0000, 4 kB)),
-        (i2cCtrl.io.apb -> (0x1000, 4 kB))
+        (ledCtrl.io.bus -> (ledCtrlOffset, 4 kB)),
+        (i2cCtrl.io.bus -> (i2cCtrlOffset, 4 kB))
       )
     )
+
+    val ledCtrlBase = apbBase + ledCtrlOffset
+    val i2cCtrlBase = apbBase + i2cCtrlOffset
+
+    val svd = SvdGenerator(
+      "slabware",
+      peripherals = Seq(
+        ledCtrl.svd("LEDs", baseAddress = ledCtrlBase),
+        i2cCtrl.svd("I2C0", baseAddress = i2cCtrlBase)
+      ),
+      description = "Slabware control system"
+    )
+    svd.dump("fw/slab-pac/slabware.svd")
   }
 }
