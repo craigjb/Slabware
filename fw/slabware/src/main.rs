@@ -1,12 +1,14 @@
 #![no_std]
 #![no_main]
 
+use core::u16;
+
 use defmt_rtt as _;
 use panic_halt as _;
-use riscv::asm::delay;
+use riscv::{asm::delay, interrupt};
 use riscv_rt::entry;
 
-use slab_pac::I2c0;
+use slab_pac::{I2c0, Timer};
 
 fn i2c_start_blocking(i2c: &I2c0) {
     i2c.master_status().modify(|_, w| w.start().set_bit());
@@ -69,6 +71,19 @@ fn i2c_rx(i2c: &I2c0) -> u8 {
     i2c.rx_data().read().value().bits()
 }
 
+#[export_name = "DefaultHandler"]
+fn timer_handler() {
+    let timer = unsafe { Timer::steal() };
+    timer.control().modify(|_, w| w.clear().set_bit());
+    timer.interrupt_status().write(|w| {
+        w.compare0status()
+            .clear_bit_by_one()
+            .overflow_status()
+            .clear_bit_by_one()
+    });
+    defmt::println!("Timer interrupt!");
+}
+
 #[entry]
 fn main() -> ! {
     let peripherals = slab_pac::Peripherals::take().unwrap();
@@ -114,6 +129,22 @@ fn main() -> ! {
     i2c_stop_blocking(&i2c);
     defmt::println!("Sent read to {:X}", address);
     defmt::println!("Read: {:X}", data);
+
+    unsafe {
+        riscv::register::mie::set_mtimer();
+        interrupt::enable();
+    }
+
+    let timer = peripherals.timer;
+    timer
+        .prescale()
+        .write(|w| unsafe { w.bits(u16::MAX as u32) });
+    timer.compare0().write(|w| unsafe { w.bits(1500) });
+    let comp0 = timer.compare0().read().bits();
+    defmt::println!("Compare0 value: {}", comp0);
+    timer
+        .control()
+        .write(|w| w.enable().set_bit().interrupt_enable().set_bit());
 
     let mut mask = 0x80;
     loop {

@@ -78,6 +78,7 @@ class SlabControl extends Component {
     new CsrPlugin(
       config = CsrPluginConfig.smallest.copy(
         mtvecInit = 0x0,
+        mtvecAccess = CsrAccess.READ_WRITE,
         ebreakGen = true,
         withPrivilegedDebug = true
       )
@@ -109,12 +110,13 @@ class SlabControl extends Component {
     val cpu = new VexRiscv(cpuConfig)
     var iBus: Axi4ReadOnly = null
     var dBus: Axi4Shared = null
+    val timerInterrupt = Bool()
     for (plugin <- cpuConfig.plugins) plugin match {
       case plugin: IBusSimplePlugin => iBus = plugin.iBus.toAxi4ReadOnly()
       case plugin: DBusSimplePlugin => dBus = plugin.dBus.toAxi4Shared()
       case plugin: CsrPlugin => {
         plugin.externalInterrupt := False
-        plugin.timerInterrupt := False
+        plugin.timerInterrupt := timerInterrupt
       }
       case plugin: DebugPlugin =>
         plugin.io.bus.fromBscane2(
@@ -153,7 +155,8 @@ class SlabControl extends Component {
     axiCrossbar.build()
 
     val ledCtrl = new LedCtrl(Apb3Bus, numLeds = 8)
-    io.leds := ledCtrl.io.leds
+    io.leds(6 downto 0) := ledCtrl.io.leds(6 downto 0)
+    io.leds(7) := timerInterrupt
 
     val i2cCtrl = new I2cCtrl(
       Apb3Bus,
@@ -169,25 +172,31 @@ class SlabControl extends Component {
     )
     io.i2c <> i2cCtrl.io.i2c
 
-    val ledCtrlOffset = 0x0
+    val timerCtrl = new TimerCtrl(Apb3Bus)
+    timerInterrupt := timerCtrl.io.interrupt
 
-    val i2cCtrlOffset = 0x1000
+    val ledCtrlOffset = 0x0
+    val i2cCtrlOffset = 0x400
+    val timerCtrlOffset = 0x800
     val apbDecoder = Apb3Decoder(
       master = apbBridge.io.apb,
       slaves = Seq(
-        (ledCtrl.io.bus -> (ledCtrlOffset, 4 kB)),
-        (i2cCtrl.io.bus -> (i2cCtrlOffset, 4 kB))
+        (ledCtrl.io.bus -> (ledCtrlOffset, 1 kB)),
+        (i2cCtrl.io.bus -> (i2cCtrlOffset, 1 kB)),
+        (timerCtrl.io.bus -> (timerCtrlOffset, 1 kB))
       )
     )
 
     val ledCtrlBase = apbBase + ledCtrlOffset
     val i2cCtrlBase = apbBase + i2cCtrlOffset
+    val timerCtrlBase = apbBase + timerCtrlOffset
 
     val svd = SvdGenerator(
       "slabware",
       peripherals = Seq(
         ledCtrl.svd("LEDs", baseAddress = ledCtrlBase),
-        i2cCtrl.svd("I2C0", baseAddress = i2cCtrlBase)
+        i2cCtrl.svd("I2C0", baseAddress = i2cCtrlBase),
+        timerCtrl.svd("TIMER", baseAddress = timerCtrlBase)
       ),
       description = "Slabware control system"
     )
