@@ -13,6 +13,6 @@ variants:
   - !Ram
     range:
       start: 0x00000000
-      end: 0x00002000
+      end: 0x00004000
     cores:
     - core0

@@ -11,7 +11,8 @@ class TimerCtrl[B <: BusDefinition.Bus](
     busDef: BusDefinition[B],
     timerWidth: Int = 16,
     prescaleWidth: Int = 16,
-    numCompares: Int = 2
+    numCompares: Int = 2,
+    prescalerResetValue: Int = 0
 ) extends Component {
   assert(timerWidth <= 32, "timerWidth must be <= 32")
   assert(prescaleWidth <= 32, "prescaleWidth must be <= 32")
@@ -33,13 +34,18 @@ class TimerCtrl[B <: BusDefinition.Bus](
     val value = prescaleReg.field(
       UInt(prescaleWidth bits),
       AccessType.WO,
-      resetValue = 0,
+      resetValue = prescalerResetValue,
       doc = "Timer prescale divisor"
     )
 
-    val inner = Prescaler(prescaleWidth)
-    inner.io.limit := value
-    val out = inner.io.overflow
+    val counter = RegInit(U(0, prescaleWidth bits))
+    counter := counter + 1
+
+    val clear = Bool()
+    val out = counter === value
+    when(out || clear) {
+      counter := 0
+    }
   }
 
   val controlReg = busif
@@ -57,7 +63,6 @@ class TimerCtrl[B <: BusDefinition.Bus](
     resetValue = 0,
     doc = "Clear prescaler and counter"
   )
-  prescaler.inner.io.clear := clear
   val interruptEnable = controlReg.field(
     Bool(),
     AccessType.RW,
@@ -85,6 +90,7 @@ class TimerCtrl[B <: BusDefinition.Bus](
     counter := 0
     clear := False
   }
+  prescaler.clear := clear
 
   val interruptStatus = busif
     .newReg(doc = "Interrupt status")
@@ -103,9 +109,10 @@ class TimerCtrl[B <: BusDefinition.Bus](
   val overflowMask = interruptMask.field(
     Bool(),
     AccessType.RW,
-    resetValue = 0,
+    resetValue = 1,
     doc = "Mask overflow interrupt"
   )
+  val maskedOverflowStatus = overflowStatus && !overflowMask
 
   val compares = (0 until numCompares).map(i => {
     new Area {
@@ -118,7 +125,7 @@ class TimerCtrl[B <: BusDefinition.Bus](
         resetValue = 0,
         doc = f"Compare $i value"
       )
-      val fire = enable && (counter === value)
+      val fire = enable && (counter === value) && prescaler.out
 
       val status = interruptStatus
         .field(
@@ -132,17 +139,17 @@ class TimerCtrl[B <: BusDefinition.Bus](
       val mask = interruptMask.field(
         Bool(),
         AccessType.RW,
-        resetValue = 0,
+        resetValue = 1,
         doc = f"Mask compare$i interrupt"
       )(SymbolName(f"compare${i}Mask"))
 
-      val maskedFire = fire && !mask
+      val maskedStatus = status && !mask
     }.setName(f"compare$i")
   })
 
   val maskedCompareFire =
-    compares.foldLeft(False)((acc, x) => acc || x.maskedFire)
-  io.interrupt := interruptEnable && maskedCompareFire
+    compares.foldLeft(False)((acc, x) => acc || x.maskedStatus)
+  io.interrupt := interruptEnable && (maskedCompareFire || maskedOverflowStatus)
 
   def svd(name: String, baseAddress: BigInt) = {
     SvdPeripheral(

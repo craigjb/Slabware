@@ -1,161 +1,64 @@
 #![no_std]
 #![no_main]
 
-use core::u16;
+mod time_driver;
 
+use defmt::unwrap;
 use defmt_rtt as _;
+use embassy_executor::Spawner;
+use embassy_time::Timer;
 use panic_halt as _;
-use riscv::{asm::delay, interrupt};
-use riscv_rt::entry;
+use riscv::interrupt;
+use slab_pac::Leds;
 
-use slab_pac::{I2c0, Timer};
-
-fn i2c_start_blocking(i2c: &I2c0) {
-    i2c.master_status().modify(|_, w| w.start().set_bit());
-    while i2c.master_status().read().start().bit_is_set() {}
-}
-
-fn i2c_stop_blocking(i2c: &I2c0) {
-    i2c.master_status().modify(|_, w| w.stop().set_bit());
-    while i2c.master_status().read().busy().bit_is_set() {}
-}
-
-fn i2c_tx(i2c: &I2c0, data: u8) {
-    i2c.tx_data().write(|w| unsafe {
-        w.valid()
-            .set_bit()
-            .enable()
-            .set_bit()
-            .disable_on_data_conflict()
-            .clear_bit()
-            .value()
-            .bits(data)
-            .repeat()
-            .clear_bit()
-    });
-}
-
-fn i2c_tx_nack_blocking(i2c: &I2c0) {
-    i2c.tx_ack().write(|w| {
-        w.value()
-            .set_bit()
-            .valid()
-            .set_bit()
-            .enable()
-            .set_bit()
-            .repeat()
-            .clear_bit()
-            .disable_on_data_conflict()
-            .clear_bit()
-    });
-    while i2c.tx_ack().read().valid().bit_is_set() {}
-}
-
-fn i2c_tx_ack_blocking(i2c: &I2c0) {
-    i2c.tx_ack().write(|w| {
-        w.value()
-            .clear_bit()
-            .valid()
-            .set_bit()
-            .enable()
-            .set_bit()
-            .repeat()
-            .clear_bit()
-            .disable_on_data_conflict()
-            .clear_bit()
-    });
-    while i2c.tx_ack().read().valid().bit_is_set() {}
-}
-
-fn i2c_rx(i2c: &I2c0) -> u8 {
-    i2c.rx_data().read().value().bits()
-}
-
-#[export_name = "DefaultHandler"]
-fn timer_handler() {
-    let timer = unsafe { Timer::steal() };
-    timer.control().modify(|_, w| w.clear().set_bit());
-    timer.interrupt_status().write(|w| {
-        w.compare0status()
-            .clear_bit_by_one()
-            .overflow_status()
-            .clear_bit_by_one()
-    });
-    defmt::println!("Timer interrupt!");
-}
-
-#[entry]
-fn main() -> ! {
-    let peripherals = slab_pac::Peripherals::take().unwrap();
-    let i2c = peripherals.i2c0;
-
-    defmt::println!("Configuring I2C clocks");
-    let sample_clock_divider = 10; // sample at 10 MHz
-    i2c.sampling_clock_divider()
-        .write(|w| unsafe { w.bits(sample_clock_divider) });
-    defmt::println!("Sample clock divider set: {}", sample_clock_divider);
-    let timeout = 0xFFFFF; // timeout after ~10 ms
-    i2c.timeout().write(|w| unsafe { w.bits(timeout) });
-    defmt::println!("Timeout set: {}", timeout);
-    let half_cycle_time = 43;
-    i2c.thigh().write(|w| unsafe { w.bits(half_cycle_time) });
-    i2c.tlow().write(|w| unsafe { w.bits(half_cycle_time) });
-    i2c.tbuf().write(|w| unsafe { w.bits(half_cycle_time) });
-    defmt::println!("tHi, tLow, tBuf set: {}", half_cycle_time);
-
-    i2c_start_blocking(&i2c);
-    let address = 0xB8;
-    i2c_tx(&i2c, address);
-    i2c_tx_nack_blocking(&i2c);
-    let data = 0x0;
-    i2c_tx(&i2c, data);
-    i2c_tx_nack_blocking(&i2c);
-    defmt::println!("Sent write to {:X}", address);
-    defmt::println!("Sent data {:X}", data);
-
-    let mut data: [u8; 8] = [0; 8];
-    i2c_start_blocking(&i2c);
-    let address = 0xB9;
-    i2c_tx(&i2c, address);
-    i2c_tx_nack_blocking(&i2c);
-    for i in 0..7 {
-        i2c_tx(&i2c, 0xFF);
-        i2c_tx_ack_blocking(&i2c);
-        data[i] = i2c_rx(&i2c);
+#[export_name = "ExceptionHandler"]
+fn exception_handler(_trap_frame: &riscv_rt::TrapFrame) -> ! {
+    use riscv::register::{mcause, mcause::Trap};
+    let cause = mcause::read();
+    match cause.cause() {
+        Trap::Exception(e) => {
+            defmt::error!("Exception: {}", e as usize);
+        }
+        _ => {}
     }
-    i2c_tx(&i2c, 0xFF);
-    i2c_tx_nack_blocking(&i2c);
-    data[7] = i2c_rx(&i2c);
-    i2c_stop_blocking(&i2c);
-    defmt::println!("Sent read to {:X}", address);
-    defmt::println!("Read: {:X}", data);
+    loop {}
+}
 
-    unsafe {
-        riscv::register::mie::set_mtimer();
-        interrupt::enable();
-    }
+fn init() -> slab_pac::Peripherals {
+    critical_section::with(|cs| {
+        let peripherals = slab_pac::Peripherals::take().unwrap();
+        time_driver::init(cs);
 
-    let timer = peripherals.timer;
-    timer
-        .prescale()
-        .write(|w| unsafe { w.bits(u16::MAX as u32) });
-    timer.compare0().write(|w| unsafe { w.bits(1500) });
-    let comp0 = timer.compare0().read().bits();
-    defmt::println!("Compare0 value: {}", comp0);
-    timer
-        .control()
-        .write(|w| w.enable().set_bit().interrupt_enable().set_bit());
+        unsafe {
+            interrupt::enable();
+        }
 
+        peripherals
+    })
+}
+
+#[embassy_executor::task]
+async fn blink(leds: Leds) {
     let mut mask = 0x80;
     loop {
-        peripherals
-            .leds
-            .ctrl()
-            .write(|w| unsafe { w.value().bits(mask) });
-        mask >>= 1;
+        leds.ctrl().write(|w| unsafe { w.value().bits(mask) });
         if mask == 0 {
             mask = 0x80;
         }
-        delay(600000);
+        mask >>= 1;
+        Timer::after_millis(100).await;
+    }
+}
+
+#[embassy_executor::main]
+async fn main(spawner: Spawner) {
+    let peripherals = init();
+
+    unwrap!(spawner.spawn(blink(peripherals.leds)));
+
+    defmt::println!("Starting...");
+    loop {
+        Timer::after_millis(1000).await;
+        defmt::println!("TICK!");
     }
 }

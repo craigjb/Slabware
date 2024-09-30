@@ -80,7 +80,8 @@ class SlabControl extends Component {
         mtvecInit = 0x0,
         mtvecAccess = CsrAccess.READ_WRITE,
         ebreakGen = true,
-        withPrivilegedDebug = true
+        withPrivilegedDebug = true,
+        wfiGenAsWait = true
       )
     ),
     new EmbeddedRiscvJtag(
@@ -155,8 +156,7 @@ class SlabControl extends Component {
     axiCrossbar.build()
 
     val ledCtrl = new LedCtrl(Apb3Bus, numLeds = 8)
-    io.leds(6 downto 0) := ledCtrl.io.leds(6 downto 0)
-    io.leds(7) := timerInterrupt
+    io.leds := ledCtrl.io.leds
 
     val i2cCtrl = new I2cCtrl(
       Apb3Bus,

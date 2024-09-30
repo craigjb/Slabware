@@ -64,7 +64,7 @@ impl crate::Writable for InterruptMaskSpec {
     const ZERO_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
     const ONE_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
 }
-#[doc = "`reset()` method sets interruptMask to value 0"]
+#[doc = "`reset()` method sets interruptMask to value 0x07"]
 impl crate::Resettable for InterruptMaskSpec {
-    const RESET_VALUE: u32 = 0;
+    const RESET_VALUE: u32 = 0x07;
 }
