@@ -102,7 +102,8 @@ class SlabGrid(
 
     val timeout = Timeout(waitTime)
     val startupStates = LcdStartupSequence.map(step => new State)
-    setEntry(startupStates(0))
+    // setEntry(startupStates(0))
+    setEntry(startupStates.last)
 
     startupStates.zipWithIndex.foreach {
       case (state, index) => {
