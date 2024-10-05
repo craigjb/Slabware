@@ -17,11 +17,10 @@ fn exception_handler(_trap_frame: &riscv_rt::TrapFrame) -> ! {
     let cause = mcause::read();
     match cause.cause() {
         Trap::Exception(e) => {
-            defmt::error!("Exception: {}", e as usize);
+            defmt::panic!("Exception trap, cause: {}", e as usize)
         }
-        _ => {}
+        _ => unreachable!(),
     }
-    loop {}
 }
 
 fn init() -> slab_pac::Peripherals {

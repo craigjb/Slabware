@@ -43,11 +43,13 @@ class SlabControl extends Component {
     new IBusSimplePlugin(
       resetVector = 0x00000000L,
       cmdForkOnSecondStage = false,
-      cmdForkPersistence = true
+      cmdForkPersistence = true,
+      compressedGen = true
     ),
     new DBusSimplePlugin(
       catchAddressMisaligned = false,
-      catchAccessFault = false
+      catchAccessFault = false,
+      withLrSc = true
     ),
     new DecoderSimplePlugin(
       catchIllegalInstruction = true
@@ -57,11 +59,13 @@ class SlabControl extends Component {
       zeroBoot = false
     ),
     new IntAluPlugin,
+    new MulPlugin,
+    new DivPlugin,
     new SrcPlugin(
       separatedAddSub = false,
       executeInsertion = true
     ),
-    new LightShifterPlugin,
+    new FullBarrelShifterPlugin,
     new HazardSimplePlugin(
       bypassExecute = true,
       bypassMemory = true,
@@ -73,7 +77,7 @@ class SlabControl extends Component {
     ),
     new BranchPlugin(
       earlyBranch = false,
-      catchAddressMisaligned = false
+      catchAddressMisaligned = true
     ),
     new CsrPlugin(
       config = CsrPluginConfig.smallest.copy(
@@ -95,12 +99,6 @@ class SlabControl extends Component {
       withTunneling = true,
       withTap = false
     )
-    // new DebugPlugin(
-    //   debugClockDomain,
-    //   hardwareBreakpointCount = 3,
-    //   BreakpointReadback = true
-    // ),
-    // new YamlPlugin("cpu.yaml")
   )
 
   val cpuConfig = VexRiscvConfig(

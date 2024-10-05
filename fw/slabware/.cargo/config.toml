@@ -1,4 +1,4 @@
-[target.riscv32i-unknown-none-elf]
+[target.riscv32imc-unknown-none-elf]
 rustflags = [
   "-C", "link-arg=-Tdevice.x",
   "-C", "link-arg=-Tlink.x",
@@ -8,7 +8,7 @@ rustflags = [
 runner = 'probe-rs run --chip-description-path vexriscv.yaml --chip=vexriscv'
 
 [build]
-target = "riscv32i-unknown-none-elf"
+target = "riscv32imc-unknown-none-elf"
 
 [alias]
 rr = "run --release"
