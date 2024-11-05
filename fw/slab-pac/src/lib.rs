@@ -68,16 +68,16 @@ impl core::fmt::Debug for Leds {
 #[doc = "LED control"]
 pub mod leds;
 #[doc = "I2C controller"]
-pub struct I2c0 {
+pub struct Mi2c {
     _marker: PhantomData<*const ()>,
 }
-unsafe impl Send for I2c0 {}
-impl I2c0 {
+unsafe impl Send for Mi2c {}
+impl Mi2c {
     #[doc = r"Pointer to the register block"]
-    pub const PTR: *const i2c0::RegisterBlock = 0x1000_0400 as *const _;
+    pub const PTR: *const mi2c::RegisterBlock = 0x1000_0400 as *const _;
     #[doc = r"Return the pointer to the register block"]
     #[inline(always)]
-    pub const fn ptr() -> *const i2c0::RegisterBlock {
+    pub const fn ptr() -> *const mi2c::RegisterBlock {
         Self::PTR
     }
     #[doc = r" Steal an instance of this peripheral"]
@@ -99,20 +99,20 @@ impl I2c0 {
         }
     }
 }
-impl Deref for I2c0 {
-    type Target = i2c0::RegisterBlock;
+impl Deref for Mi2c {
+    type Target = mi2c::RegisterBlock;
     #[inline(always)]
     fn deref(&self) -> &Self::Target {
         unsafe { &*Self::PTR }
     }
 }
-impl core::fmt::Debug for I2c0 {
+impl core::fmt::Debug for Mi2c {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-        f.debug_struct("I2c0").finish()
+        f.debug_struct("Mi2c").finish()
     }
 }
 #[doc = "I2C controller"]
-pub mod i2c0;
+pub mod mi2c;
 #[doc = "Timer"]
 pub struct Timer {
     _marker: PhantomData<*const ()>,
@@ -166,8 +166,8 @@ static mut DEVICE_PERIPHERALS: bool = false;
 pub struct Peripherals {
     #[doc = "LEDs"]
     pub leds: Leds,
-    #[doc = "I2C0"]
-    pub i2c0: I2c0,
+    #[doc = "MI2C"]
+    pub mi2c: Mi2c,
     #[doc = "TIMER"]
     pub timer: Timer,
 }
@@ -193,7 +193,7 @@ impl Peripherals {
         DEVICE_PERIPHERALS = true;
         Peripherals {
             leds: Leds::steal(),
-            i2c0: I2c0::steal(),
+            mi2c: Mi2c::steal(),
             timer: Timer::steal(),
         }
     }

@@ -9,6 +9,7 @@ pub struct RegisterBlock {
     tlow: Tlow,
     thigh: Thigh,
     tbuf: Tbuf,
+    interrupt: Interrupt,
     sampling_clock_divider: SamplingClockDivider,
     timeout: Timeout,
     tsu_data: TsuData,
@@ -56,27 +57,32 @@ impl RegisterBlock {
     pub const fn tbuf(&self) -> &Tbuf {
         &self.tbuf
     }
-    #[doc = "0x20 - Sampling clock"]
+    #[doc = "0x20 - Interrupt control"]
+    #[inline(always)]
+    pub const fn interrupt(&self) -> &Interrupt {
+        &self.interrupt
+    }
+    #[doc = "0x24 - Sampling clock"]
     #[inline(always)]
     pub const fn sampling_clock_divider(&self) -> &SamplingClockDivider {
         &self.sampling_clock_divider
     }
-    #[doc = "0x24 - Timeout"]
+    #[doc = "0x28 - Timeout"]
     #[inline(always)]
     pub const fn timeout(&self) -> &Timeout {
         &self.timeout
     }
-    #[doc = "0x28 - TSU Data"]
+    #[doc = "0x2c - TSU Data"]
     #[inline(always)]
     pub const fn tsu_data(&self) -> &TsuData {
         &self.tsu_data
     }
-    #[doc = "0x2c - Slave status"]
+    #[doc = "0x30 - Slave status"]
     #[inline(always)]
     pub const fn slave_status(&self) -> &SlaveStatus {
         &self.slave_status
     }
-    #[doc = "0x30 - Slave override"]
+    #[doc = "0x34 - Slave override"]
     #[inline(always)]
     pub const fn slave_override(&self) -> &SlaveOverride {
         &self.slave_override
@@ -130,6 +136,12 @@ module"]
 pub type Tbuf = crate::Reg<tbuf::TbufSpec>;
 #[doc = "I2C idle timing"]
 pub mod tbuf;
+#[doc = "interrupt (rw) register accessor: Interrupt control\n\nYou can [`read`](crate::Reg::read) this register and get [`interrupt::R`]. You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`interrupt::W`]. You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@interrupt`]
+module"]
+#[doc(alias = "interrupt")]
+pub type Interrupt = crate::Reg<interrupt::InterruptSpec>;
+#[doc = "Interrupt control"]
+pub mod interrupt;
 #[doc = "samplingClockDivider (w) register accessor: Sampling clock\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`sampling_clock_divider::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@sampling_clock_divider`]
 module"]
 #[doc(alias = "samplingClockDivider")]

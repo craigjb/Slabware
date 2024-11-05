@@ -412,6 +412,7 @@ dependencies = [
  "embassy-sync",
  "embassy-time",
  "embassy-time-driver",
+ "embedded-hal-async",
  "panic-halt",
  "riscv",
  "riscv-rt",

@@ -7,7 +7,7 @@ use embassy_sync::blocking_mutex::Mutex;
 use embassy_time_driver::{AlarmHandle, Driver, TICK_HZ};
 use slab_pac::Timer;
 
-const CPU_FREQ: u32 = 50_000_000;
+pub const CPU_FREQ: u32 = 50_000_000;
 
 // NOTE regarding ALARM_COUNT:
 //
