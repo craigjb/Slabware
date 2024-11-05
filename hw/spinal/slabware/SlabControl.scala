@@ -101,6 +101,12 @@ class SlabControl extends Component {
     )
   )
 
+  val mi2cInterruptPlugin = new UserInterruptPlugin(
+    interruptName = "i2c",
+    code = 20
+  )
+  cpuPlugins += mi2cInterruptPlugin
+
   val cpuConfig = VexRiscvConfig(
     plugins = cpuPlugins
   )
@@ -169,6 +175,7 @@ class SlabControl extends Component {
       )
     )
     io.i2c <> i2cCtrl.io.i2c
+    mi2cInterruptPlugin.interrupt := i2cCtrl.io.interrupt
 
     val timerCtrl = new TimerCtrl(Apb3Bus)
     timerInterrupt := timerCtrl.io.interrupt
@@ -193,7 +200,7 @@ class SlabControl extends Component {
       "slabware",
       peripherals = Seq(
         ledCtrl.svd("LEDs", baseAddress = ledCtrlBase),
-        i2cCtrl.svd("I2C0", baseAddress = i2cCtrlBase),
+        i2cCtrl.svd("MI2C", baseAddress = i2cCtrlBase),
         timerCtrl.svd("TIMER", baseAddress = timerCtrlBase)
       ),
       description = "Slabware control system"

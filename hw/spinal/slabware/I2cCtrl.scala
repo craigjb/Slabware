@@ -4,7 +4,7 @@ import spinal.core._
 import spinal.lib._
 import spinal.lib.fsm.{EntryPoint, State, StateMachine}
 import spinal.lib.com.i2c._
-import spinal.lib.bus.regif.AccessType
+import spinal.lib.bus.regif.{AccessType, SymbolName}
 
 class I2cCtrl[B <: BusDefinition.Bus](
     busDef: BusDefinition[B],
@@ -17,6 +17,7 @@ class I2cCtrl[B <: BusDefinition.Bus](
   val io = new Bundle {
     val bus = slave(busDef.createBus(AddressWidth, DataWidth))
     val i2c = master(I2c())
+    val interrupt = out Bool ()
   }
 
   val i2cCtrl = new I2cSlave(generics.ctrlGenerics)
@@ -499,6 +500,94 @@ class I2cCtrl[B <: BusDefinition.Bus](
       rxAck.listen := False
     }
 
+    val interruptCtrl = new Area {
+      val INTERRUPT = busif
+        .newReg(doc = "Interrupt control")
+        .setName("interrupt")
+
+      val rxDataEnable = INTERRUPT.field(
+        Bool(),
+        AccessType.RW,
+        resetValue = 0,
+        doc = "RX data interrupt enable"
+      )
+      val rxAckEnable = INTERRUPT.field(
+        Bool(),
+        AccessType.RW,
+        resetValue = 0,
+        doc = "RX ack interrupt enable"
+      )
+      val txDataEnable = INTERRUPT.field(
+        Bool(),
+        AccessType.RW,
+        resetValue = 0,
+        doc = "TX data interrupt enable"
+      )
+      val txAckEnable = INTERRUPT.field(
+        Bool(),
+        AccessType.RW,
+        resetValue = 0,
+        doc = "TX ack interrupt enable"
+      )
+
+      io.interrupt :=
+        (rxDataEnable && rxData.valid) || (rxAckEnable && rxAck.valid) ||
+          (txDataEnable && !txData.valid) || (txAckEnable && !txAck.valid)
+
+      def i2CSlaveEvent(intName: String, cond: Bool, doc: String) = new Area {
+        val enable = INTERRUPT.field(
+          Bool(),
+          AccessType.RW,
+          resetValue = 0,
+          doc = f"${doc} enable"
+        )(SymbolName(s"${intName}Enable"))
+        val flag = INTERRUPT.field(
+          Bool(),
+          AccessType.W1C,
+          resetValue = 0,
+          doc = f"${doc} flag"
+        )(SymbolName(s"${intName}Flag"))
+        flag.setWhen(cond)
+        flag.clearWhen(!enable)
+        io.interrupt.setWhen(flag)
+      }
+
+      val start =
+        i2CSlaveEvent(
+          "start",
+          bus.cmd.kind === I2cSlaveCmdMode.START,
+          "I2C Start"
+        )
+      val restart = i2CSlaveEvent(
+        "restart",
+        bus.cmd.kind === I2cSlaveCmdMode.RESTART,
+        "I2C Restart"
+      )
+      val end =
+        i2CSlaveEvent("end", bus.cmd.kind === I2cSlaveCmdMode.STOP, "I2C END")
+      val drop = i2CSlaveEvent(
+        "drop",
+        bus.cmd.kind === I2cSlaveCmdMode.DROP || genMaster.mux(
+          masterLogic.fsm.dropped.trigger,
+          False
+        ),
+        "I2C Drop"
+      )
+
+      val clockGenExit =
+        genMaster generate i2CSlaveEvent(
+          "clockGenExit",
+          masterLogic.busy.fall(),
+          "Clock gen exit"
+        )
+      val clockGenEnter =
+        genMaster generate i2CSlaveEvent(
+          "clockGenEnter",
+          masterLogic.busy.rise(),
+          "Clock gen enter"
+        )
+    }
+
     val SCD = busif
       .newReg(doc = "Sampling clock")
       .setName("samplingClockDivider")
@@ -551,6 +640,7 @@ class I2cCtrl[B <: BusDefinition.Bus](
     }
 
     if (genMaster) masterLogic.fsm.build()
+
     val slaveOverride = new Area {
       val SOVERRIDE = busif
         .newReg(doc = "Slave override")
