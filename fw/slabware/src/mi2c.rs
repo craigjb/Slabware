@@ -1,41 +1,15 @@
 use core::future::poll_fn;
 use core::task::Poll;
 
+use crate::custom_int::*;
+use crate::i2c::AckKind;
+use crate::sealed_instance::SealedInstance;
 use embassy_sync::waitqueue::AtomicWaker;
 pub use embedded_hal_async::i2c::I2c;
 use embedded_hal_async::i2c::{ErrorKind, ErrorType, Operation, SevenBitAddress};
 use slab_pac::Mi2c;
 
 pub const MI2C_INTERRUPT_CODE: usize = 20;
-
-fn enable_mi2c_interrupts() {
-    let bits: usize = 1 << MI2C_INTERRUPT_CODE;
-    unsafe {
-        core::arch::asm!(concat!("csrrs x0, ", stringify!(0x304), ", {0}"), in(reg) bits);
-    }
-}
-
-fn disable_mi2c_interrupts() {
-    let bits: usize = 1 << MI2C_INTERRUPT_CODE;
-    unsafe {
-        core::arch::asm!(concat!("csrrc x0, ", stringify!(0x304), ", {0}"), in(reg) bits);
-    }
-}
-
-#[derive(Clone, Copy, PartialEq)]
-enum AckKind {
-    Ack,
-    Nack,
-}
-
-impl AckKind {
-    fn value(&self) -> bool {
-        match self {
-            AckKind::Ack => false,
-            AckKind::Nack => true,
-        }
-    }
-}
 
 pub struct I2cMaster {
     regs: Mi2c,
@@ -57,7 +31,7 @@ impl I2cMaster {
         defmt::debug!("MI2C tHi, tLow, tBuf, tsuData set: {}", half_cycle_time);
 
         defmt::debug!("Enabling MI2C interrupts");
-        enable_mi2c_interrupts();
+        enable_custom_interrupt(MI2C_INTERRUPT_CODE);
 
         Self {
             regs: i2c,
@@ -220,13 +194,10 @@ impl I2c for I2cMaster {
 
 impl Drop for I2cMaster {
     fn drop(&mut self) {
-        disable_mi2c_interrupts();
+        disable_custom_interrupt(MI2C_INTERRUPT_CODE);
     }
 }
 
-trait SealedInstance {
-    fn waker() -> &'static AtomicWaker;
-}
 impl SealedInstance for Mi2c {
     fn waker() -> &'static AtomicWaker {
         static MI2C_WAKER: AtomicWaker = AtomicWaker::new();

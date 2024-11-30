@@ -5,6 +5,7 @@ pub struct RegisterBlock {
     rx_ack: RxAck,
     tx_data: TxData,
     tx_ack: TxAck,
+    address_filter0: AddressFilter0,
     interrupt: Interrupt,
     sampling_clock_divider: SamplingClockDivider,
     timeout: Timeout,
@@ -33,32 +34,37 @@ impl RegisterBlock {
     pub const fn tx_ack(&self) -> &TxAck {
         &self.tx_ack
     }
-    #[doc = "0x10 - Interrupt control"]
+    #[doc = "0x10 - Address filter 0"]
+    #[inline(always)]
+    pub const fn address_filter0(&self) -> &AddressFilter0 {
+        &self.address_filter0
+    }
+    #[doc = "0x14 - Interrupt control"]
     #[inline(always)]
     pub const fn interrupt(&self) -> &Interrupt {
         &self.interrupt
     }
-    #[doc = "0x14 - Sampling clock"]
+    #[doc = "0x18 - Sampling clock"]
     #[inline(always)]
     pub const fn sampling_clock_divider(&self) -> &SamplingClockDivider {
         &self.sampling_clock_divider
     }
-    #[doc = "0x18 - Timeout"]
+    #[doc = "0x1c - Timeout"]
     #[inline(always)]
     pub const fn timeout(&self) -> &Timeout {
         &self.timeout
     }
-    #[doc = "0x1c - TSU Data"]
+    #[doc = "0x20 - TSU Data"]
     #[inline(always)]
     pub const fn tsu_data(&self) -> &TsuData {
         &self.tsu_data
     }
-    #[doc = "0x20 - Slave status"]
+    #[doc = "0x24 - Slave status"]
     #[inline(always)]
     pub const fn slave_status(&self) -> &SlaveStatus {
         &self.slave_status
     }
-    #[doc = "0x24 - Slave override"]
+    #[doc = "0x28 - Slave override"]
     #[inline(always)]
     pub const fn slave_override(&self) -> &SlaveOverride {
         &self.slave_override
@@ -88,6 +94,12 @@ module"]
 pub type TxAck = crate::Reg<tx_ack::TxAckSpec>;
 #[doc = "Transmit acknowledge"]
 pub mod tx_ack;
+#[doc = "addressFilter0 (rw) register accessor: Address filter 0\n\nYou can [`read`](crate::Reg::read) this register and get [`address_filter0::R`]. You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`address_filter0::W`]. You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@address_filter0`]
+module"]
+#[doc(alias = "addressFilter0")]
+pub type AddressFilter0 = crate::Reg<address_filter0::AddressFilter0Spec>;
+#[doc = "Address filter 0"]
+pub mod address_filter0;
 #[doc = "interrupt (rw) register accessor: Interrupt control\n\nYou can [`read`](crate::Reg::read) this register and get [`interrupt::R`]. You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`interrupt::W`]. You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@interrupt`]
 module"]
 #[doc(alias = "interrupt")]
@@ -100,9 +112,9 @@ module"]
 pub type SamplingClockDivider = crate::Reg<sampling_clock_divider::SamplingClockDividerSpec>;
 #[doc = "Sampling clock"]
 pub mod sampling_clock_divider;
-#[doc = "timeout (w) register accessor: Timeout\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`timeout::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@timeout`]
+#[doc = "TIMEOUT (w) register accessor: Timeout\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`timeout::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@timeout`]
 module"]
-#[doc(alias = "timeout")]
+#[doc(alias = "TIMEOUT")]
 pub type Timeout = crate::Reg<timeout::TimeoutSpec>;
 #[doc = "Timeout"]
 pub mod timeout;

@@ -1,4 +1,4 @@
-#[doc = "Register `tbuf` writer"]
+#[doc = "Register `TBUF` writer"]
 pub type W = crate::W<TbufSpec>;
 #[doc = "Field `tBuf` writer - # of cycles idle"]
 pub type TBufW<'a, REG> = crate::FieldWriter<'a, REG, 16, u16>;
@@ -21,7 +21,7 @@ impl crate::Writable for TbufSpec {
     const ZERO_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
     const ONE_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
 }
-#[doc = "`reset()` method sets tbuf to value 0"]
+#[doc = "`reset()` method sets TBUF to value 0"]
 impl crate::Resettable for TbufSpec {
     const RESET_VALUE: u32 = 0;
 }

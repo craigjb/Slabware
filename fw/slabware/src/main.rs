@@ -1,7 +1,11 @@
 #![no_std]
 #![no_main]
 
+mod custom_int;
+mod edid;
+mod i2c;
 mod mi2c;
+mod sealed_instance;
 mod si2c;
 mod time_driver;
 mod tmds181;
@@ -57,8 +61,8 @@ async fn main(spawner: Spawner) {
             .await
     );
 
-    si2c::init(&peripherals.si2c);
-    si2c::ddc_test(&peripherals.si2c);
+    let i2cs = si2c::I2cSlave::new(peripherals.si2c, 0x50);
+    unwrap!(spawner.spawn(edid::ddc_edid(i2cs)));
 }
 
 #[export_name = "ExceptionHandler"]
@@ -78,6 +82,7 @@ fn interrupt_handler() {
     let cause = riscv::register::mcause::read().code();
     match cause {
         mi2c::MI2C_INTERRUPT_CODE => mi2c::handle_mi2c_interrupt(),
+        si2c::SI2C_INTERRUPT_CODE => si2c::handle_si2c_interrupt(),
         _ => {}
     }
 }

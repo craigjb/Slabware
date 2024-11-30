@@ -1,4 +1,4 @@
-#[doc = "Register `thigh` writer"]
+#[doc = "Register `THIGH` writer"]
 pub type W = crate::W<ThighSpec>;
 #[doc = "Field `tHigh` writer - # of cycles high"]
 pub type THighW<'a, REG> = crate::FieldWriter<'a, REG, 16, u16>;
@@ -21,7 +21,7 @@ impl crate::Writable for ThighSpec {
     const ZERO_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
     const ONE_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
 }
-#[doc = "`reset()` method sets thigh to value 0"]
+#[doc = "`reset()` method sets THIGH to value 0"]
 impl crate::Resettable for ThighSpec {
     const RESET_VALUE: u32 = 0;
 }

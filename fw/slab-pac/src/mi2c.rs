@@ -118,21 +118,21 @@ module"]
 pub type MasterStatus = crate::Reg<master_status::MasterStatusSpec>;
 #[doc = "Master status"]
 pub mod master_status;
-#[doc = "tlow (w) register accessor: I2C low timing\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`tlow::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@tlow`]
+#[doc = "TLOW (w) register accessor: I2C low timing\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`tlow::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@tlow`]
 module"]
-#[doc(alias = "tlow")]
+#[doc(alias = "TLOW")]
 pub type Tlow = crate::Reg<tlow::TlowSpec>;
 #[doc = "I2C low timing"]
 pub mod tlow;
-#[doc = "thigh (w) register accessor: I2C high timing\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`thigh::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@thigh`]
+#[doc = "THIGH (w) register accessor: I2C high timing\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`thigh::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@thigh`]
 module"]
-#[doc(alias = "thigh")]
+#[doc(alias = "THIGH")]
 pub type Thigh = crate::Reg<thigh::ThighSpec>;
 #[doc = "I2C high timing"]
 pub mod thigh;
-#[doc = "tbuf (w) register accessor: I2C idle timing\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`tbuf::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@tbuf`]
+#[doc = "TBUF (w) register accessor: I2C idle timing\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`tbuf::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@tbuf`]
 module"]
-#[doc(alias = "tbuf")]
+#[doc(alias = "TBUF")]
 pub type Tbuf = crate::Reg<tbuf::TbufSpec>;
 #[doc = "I2C idle timing"]
 pub mod tbuf;
@@ -148,9 +148,9 @@ module"]
 pub type SamplingClockDivider = crate::Reg<sampling_clock_divider::SamplingClockDividerSpec>;
 #[doc = "Sampling clock"]
 pub mod sampling_clock_divider;
-#[doc = "timeout (w) register accessor: Timeout\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`timeout::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@timeout`]
+#[doc = "TIMEOUT (w) register accessor: Timeout\n\nYou can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`timeout::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@timeout`]
 module"]
-#[doc(alias = "timeout")]
+#[doc(alias = "TIMEOUT")]
 pub type Timeout = crate::Reg<timeout::TimeoutSpec>;
 #[doc = "Timeout"]
 pub mod timeout;
