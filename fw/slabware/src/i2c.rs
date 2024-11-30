@@ -19,10 +19,6 @@ impl AckKind {
         }
     }
 
-    pub fn is_ack(&self) -> bool {
-        *self == AckKind::Ack
-    }
-
     pub fn is_nack(&self) -> bool {
         *self == AckKind::Nack
     }
