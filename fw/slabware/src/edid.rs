@@ -32,7 +32,7 @@ pub async fn ddc_edid(i2cs: I2cSlave) {
                     }
                 }
                 _ => {
-                    defmt::println!("EDID ignored address: {}", addr);
+                    defmt::debug!("EDID ignored address: {}", addr);
                 }
             }
         }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Generated from SpinalHDL. Don't edit. -->
-<!-- Date generated: Fri Nov 29 22:02:19 MST 2024 -->
+<!-- Date generated: Fri Nov 29 22:52:11 MST 2024 -->
 <device schemaVersion="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
   xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_0.xsd">
   <name>slabware</name>
@@ -236,11 +236,11 @@
           </field>
           <field>
             <name>valid</name>
-            <description>Receive data valid (set to clear)</description>
+            <description>Receive data valid (cleared on read)</description>
             <bitRange>[8:8]</bitRange>
-            <access>read-write</access>
-            <modifiedWriteValues>oneToClear</modifiedWriteValues>
-            <readAction>modify</readAction>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>clear</readAction>
           </field>
           <field>
             <name>listen</name>
@@ -791,11 +791,11 @@
           </field>
           <field>
             <name>valid</name>
-            <description>Receive data valid (set to clear)</description>
+            <description>Receive data valid (cleared on read)</description>
             <bitRange>[8:8]</bitRange>
-            <access>read-write</access>
-            <modifiedWriteValues>oneToClear</modifiedWriteValues>
-            <readAction>modify</readAction>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>clear</readAction>
           </field>
           <field>
             <name>listen</name>

@@ -4,10 +4,8 @@ pub type R = crate::R<RxDataSpec>;
 pub type W = crate::W<RxDataSpec>;
 #[doc = "Field `value` reader - Receive data value\n\n<div class=\"warning\">The field is <b>modified</b> in some way after a read operation.</div>"]
 pub type ValueR = crate::FieldReader;
-#[doc = "Field `valid` reader - Receive data valid (set to clear)\n\n<div class=\"warning\">The field is <b>modified</b> in some way after a read operation.</div>"]
+#[doc = "Field `valid` reader - Receive data valid (cleared on read)\n\n<div class=\"warning\">The field is <b>cleared</b> (set to zero) following a read operation.</div>"]
 pub type ValidR = crate::BitReader;
-#[doc = "Field `valid` writer - Receive data valid (set to clear)"]
-pub type ValidW<'a, REG> = crate::BitWriter1C<'a, REG>;
 #[doc = "Field `listen` writer - Listen for receive data"]
 pub type ListenW<'a, REG> = crate::BitWriter<'a, REG>;
 impl R {
@@ -16,19 +14,13 @@ impl R {
     pub fn value(&self) -> ValueR {
         ValueR::new((self.bits & 0xff) as u8)
     }
-    #[doc = "Bit 8 - Receive data valid (set to clear)"]
+    #[doc = "Bit 8 - Receive data valid (cleared on read)"]
     #[inline(always)]
     pub fn valid(&self) -> ValidR {
         ValidR::new(((self.bits >> 8) & 1) != 0)
     }
 }
 impl W {
-    #[doc = "Bit 8 - Receive data valid (set to clear)"]
-    #[inline(always)]
-    #[must_use]
-    pub fn valid(&mut self) -> ValidW<RxDataSpec> {
-        ValidW::new(self, 8)
-    }
     #[doc = "Bit 9 - Listen for receive data"]
     #[inline(always)]
     #[must_use]
@@ -47,7 +39,7 @@ impl crate::Readable for RxDataSpec {}
 impl crate::Writable for RxDataSpec {
     type Safety = crate::Unsafe;
     const ZERO_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
-    const ONE_TO_MODIFY_FIELDS_BITMAP: u32 = 0x0100;
+    const ONE_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
 }
 #[doc = "`reset()` method sets rxData to value 0"]
 impl crate::Resettable for RxDataSpec {

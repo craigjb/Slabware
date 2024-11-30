@@ -31,7 +31,7 @@ impl I2cSlave {
 
         i2c.address_filter0()
             .write(|w| unsafe { w.enable().set_bit().address().bits(address) });
-        defmt::debug!("SI2C address filter set: {}", address);
+        defmt::debug!("SI2C address filter set: {:#02x}", address);
 
         defmt::debug!("Enabling SI2C interrupts");
         enable_custom_interrupt(SI2C_INTERRUPT_CODE);
@@ -64,9 +64,7 @@ impl I2cSlave {
     }
 
     pub async fn read(&self, ack: AckKind) -> Result<u8, I2cSlaveError> {
-        self.regs
-            .rx_data()
-            .write(|w| w.valid().clear_bit_by_one().listen().set_bit());
+        self.regs.rx_data().modify(|_, w| w.listen().set_bit());
         self.regs
             .interrupt()
             .modify(|_, w| w.rx_data_enable().set_bit().end_enable().set_bit());
@@ -89,9 +87,7 @@ impl I2cSlave {
 
             let rx = self.regs.rx_data().read();
             if rx.valid().bit_is_set() {
-                self.regs
-                    .rx_data()
-                    .write(|w| w.valid().clear_bit_by_one().listen().clear_bit());
+                self.regs.rx_data().write(|w| w.listen().clear_bit());
                 self.regs
                     .interrupt()
                     .modify(|_, w| w.rx_data_enable().clear_bit().end_enable().clear_bit());

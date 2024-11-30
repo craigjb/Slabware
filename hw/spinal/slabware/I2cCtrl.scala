@@ -49,9 +49,9 @@ class I2cCtrl[B <: BusDefinition.Bus](
 
       val valid = RXDATA.field(
         Bool(),
-        AccessType.W1C,
+        AccessType.RC,
         resetValue = 0,
-        doc = "Receive data valid (set to clear)"
+        doc = "Receive data valid (cleared on read)"
       )
       val listen =
         RXDATA.field(
