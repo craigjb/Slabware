@@ -157,6 +157,50 @@ class I2cCtrl[B <: BusDefinition.Bus](
       val forceAck = False
     }
 
+    val addressFilter = if (genAddressFilter) new Area {
+      val addressFilters = (0 until addressFilterCount).map(i =>
+        new Area {
+          val reg = busif
+            .newReg(doc = f"Address filter ${i}")
+            .setName(f"addressFilter${i}")
+          val address = reg.field(
+            Bits(7 bits),
+            AccessType.RW,
+            resetValue = 0,
+            doc = "Address"
+          )
+          val enable = reg.field(
+            Bool,
+            AccessType.RW,
+            resetValue = 0,
+            doc = "Enable"
+          )
+        }
+      )
+
+      val addressValid = RegInit(False)
+      val address = Reg(Bits(8 bits))
+
+      when(!addressValid && rxData.event) {
+        addressValid := True
+        address := rxData.value
+      }
+
+      when(frameReset) {
+        addressValid := False
+      }
+
+      val hits = addressFilters.map(filter =>
+        filter.enable && (filter.address === address(7 downto 1))
+      )
+
+      when(addressValid.rise() && hits.orR) {
+        // ack on hit
+        txAck.value := False
+      }
+    }
+    else null
+
     val masterLogic = genMaster generate new Area {
       val MSTAT = busif
         .newReg(doc = "Master status")

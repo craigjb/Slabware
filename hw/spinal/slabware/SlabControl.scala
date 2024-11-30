@@ -199,7 +199,7 @@ class SlabControl extends Component {
           samplingClockDividerWidth = 12 bits,
           timeoutWidth = 20 bits
         ),
-        addressFilterCount = 0,
+        addressFilterCount = 1,
         masterGenerics = null
       )
     )
