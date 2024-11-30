@@ -7,3 +7,6 @@ chip_descriptions = ["vexriscv.yaml"]
 
 [default.rtt]
 enabled = true
+up_channels = [
+    { channel = 0, mode = "NoBlockSkip", format = "Defmt", show_location = true },
+]

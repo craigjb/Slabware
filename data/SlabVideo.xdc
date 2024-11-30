@@ -966,3 +966,9 @@ set_property -dict { \
     PACKAGE_PIN Y26 \
     IOSTANDARD LVCMOS33 \
   } [get_ports { DC[9] }];
+set_property -dict { \
+    PACKAGE_PIN AA13 \
+  } [get_ports { HDMI_CLK_P }];
+set_property -dict { \
+    PACKAGE_PIN AB13 \
+  } [get_ports { HDMI_CLK_N }];

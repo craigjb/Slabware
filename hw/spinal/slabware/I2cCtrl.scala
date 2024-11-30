@@ -28,6 +28,7 @@ class I2cCtrl[B <: BusDefinition.Bus](
     import i2cCtrl.io._
 
     val frameReset = False
+    val valueRegWrite = False
 
     val i2cBuffer = I2c()
     i2cBuffer <> i2c
@@ -45,11 +46,12 @@ class I2cCtrl[B <: BusDefinition.Bus](
       )
       val valueReg = Reg(Bits(8 bits))
       value := valueReg
+
       val valid = RXDATA.field(
         Bool(),
-        AccessType.RC,
+        AccessType.W1C,
         resetValue = 0,
-        doc = "Receive data valid (cleared on read)"
+        doc = "Receive data valid (set to clear)"
       )
       val listen =
         RXDATA.field(
@@ -448,21 +450,26 @@ class I2cCtrl[B <: BusDefinition.Bus](
       }
       is(I2cSlaveCmdMode.READ) {
         when(!inAckState) {
-          rxData.valueReg(7 - dataCounter) := bus.cmd.data
-          dataCounter := dataCounter + 1
+          when(!rxData.valid) {
+            rxData.valueReg(7 - dataCounter) := bus.cmd.data
+            dataCounter := dataCounter + 1
+            valueRegWrite := True
+
+            when(dataCounter === 7) {
+              rxData.valid setWhen (rxData.listen)
+              rxData.event := True
+              inAckState := True
+              when(txData.valid && !txData.repeat) {
+                txData.valid := False
+              }
+            }
+          }
 
           when(bus.rsp.data =/= bus.cmd.data) {
             txData.enable clearWhen (txData.disableOnDataConflict)
             txAck.enable clearWhen (txAck.disableOnDataConflict)
           }
-          when(dataCounter === 7) {
-            rxData.valid setWhen (rxData.listen)
-            rxData.event := True
-            inAckState := True
-            when(txData.valid && !txData.repeat) {
-              txData.valid := False
-            }
-          }
+
         } otherwise {
           rxAck.valid setWhen (rxAck.listen)
           rxAck.valueReg := bus.cmd.data

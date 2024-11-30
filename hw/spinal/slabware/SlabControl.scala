@@ -17,7 +17,8 @@ import vexriscv.plugin._
 class SlabControl extends Component {
   val io = new Bundle {
     val leds = out(Bits(8 bits))
-    val i2c = master(I2c())
+    val hdmiCtrlI2c = master(I2c())
+    val ddcI2c = master(I2c())
   }
 
   val sysReset = Bool()
@@ -81,6 +82,8 @@ class SlabControl extends Component {
     ),
     new CsrPlugin(
       config = CsrPluginConfig.smallest.copy(
+        misaExtensionsInit = 70,
+        misaAccess = CsrAccess.READ_ONLY,
         mtvecInit = 0x0,
         mtvecAccess = CsrAccess.READ_WRITE,
         ebreakGen = true,
@@ -97,24 +100,33 @@ class SlabControl extends Component {
       debugCd = debugClockDomain,
       jtagCd = jtagClockDomain,
       withTunneling = true,
-      withTap = false
+      withTap = false,
+      withSysBus = true
     )
   )
 
   val mi2cInterruptPlugin = new UserInterruptPlugin(
-    interruptName = "i2c",
+    interruptName = "mi2c",
     code = 20
   )
   cpuPlugins += mi2cInterruptPlugin
+
+  val si2cInterruptPlugin = new UserInterruptPlugin(
+    interruptName = "si2c",
+    code = 21
+  )
+  cpuPlugins += si2cInterruptPlugin
 
   val cpuConfig = VexRiscvConfig(
     plugins = cpuPlugins
   )
 
-  new ClockingArea(sysClkDomain) {
+  val sysClkArea = new ClockingArea(sysClkDomain) {
     val cpu = new VexRiscv(cpuConfig)
+
     var iBus: Axi4ReadOnly = null
     var dBus: Axi4Shared = null
+    var debugSysBus: Axi4Shared = null
     val timerInterrupt = Bool()
     for (plugin <- cpuConfig.plugins) plugin match {
       case plugin: IBusSimplePlugin => iBus = plugin.iBus.toAxi4ReadOnly()
@@ -131,6 +143,7 @@ class SlabControl extends Component {
       case plugin: EmbeddedRiscvJtag => {
         plugin.jtagInstruction <> jtagTap.toJtagTapInstructionCtrl()
         sysReset := plugin.ndmreset
+        debugSysBus = plugin.sysBus.toAxi4Shared()
       }
       case _ =>
     }
@@ -144,7 +157,7 @@ class SlabControl extends Component {
     val apbBridge = Axi4SharedToApb3Bridge(
       addressWidth = 16,
       dataWidth = 32,
-      idWidth = 0
+      idWidth = 4
     )
 
     val axiCrossbar = Axi4CrossbarFactory()
@@ -155,14 +168,15 @@ class SlabControl extends Component {
     )
     axiCrossbar.addConnections(
       iBus -> List(ram.io.axi),
-      dBus -> List(ram.io.axi, apbBridge.io.axi)
+      dBus -> List(ram.io.axi, apbBridge.io.axi),
+      debugSysBus -> List(ram.io.axi, apbBridge.io.axi)
     )
     axiCrossbar.build()
 
     val ledCtrl = new LedCtrl(Apb3Bus, numLeds = 8)
     io.leds := ledCtrl.io.leds
 
-    val i2cCtrl = new I2cCtrl(
+    val mi2cCtrl = new I2cCtrl(
       Apb3Bus,
       I2cSlaveMemoryMappedGenerics(
         ctrlGenerics = I2cSlaveGenerics(
@@ -174,34 +188,54 @@ class SlabControl extends Component {
         masterGenerics = I2cMasterMemoryMappedGenerics(timerWidth = 16)
       )
     )
-    io.i2c <> i2cCtrl.io.i2c
-    mi2cInterruptPlugin.interrupt := i2cCtrl.io.interrupt
+    io.hdmiCtrlI2c <> mi2cCtrl.io.i2c
+    mi2cInterruptPlugin.interrupt := mi2cCtrl.io.interrupt
+
+    val si2cCtrl = new I2cCtrl(
+      Apb3Bus,
+      I2cSlaveMemoryMappedGenerics(
+        ctrlGenerics = I2cSlaveGenerics(
+          samplingWindowSize = 5,
+          samplingClockDividerWidth = 12 bits,
+          timeoutWidth = 20 bits
+        ),
+        addressFilterCount = 0,
+        masterGenerics = null
+      )
+    )
+    io.ddcI2c <> si2cCtrl.io.i2c
+    si2cInterruptPlugin.interrupt := si2cCtrl.io.interrupt
 
     val timerCtrl = new TimerCtrl(Apb3Bus)
     timerInterrupt := timerCtrl.io.interrupt
 
     val ledCtrlOffset = 0x0
-    val i2cCtrlOffset = 0x400
-    val timerCtrlOffset = 0x800
+    val timerCtrlOffset = 0x400
+    val mi2cCtrlOffset = 0x800
+    val si2cCtrlOffset = 0xc00
+
     val apbDecoder = Apb3Decoder(
       master = apbBridge.io.apb,
       slaves = Seq(
         (ledCtrl.io.bus -> (ledCtrlOffset, 1 kB)),
-        (i2cCtrl.io.bus -> (i2cCtrlOffset, 1 kB)),
-        (timerCtrl.io.bus -> (timerCtrlOffset, 1 kB))
+        (timerCtrl.io.bus -> (timerCtrlOffset, 1 kB)),
+        (mi2cCtrl.io.bus -> (mi2cCtrlOffset, 1 kB)),
+        (si2cCtrl.io.bus -> (si2cCtrlOffset, 1 kB))
       )
     )
 
     val ledCtrlBase = apbBase + ledCtrlOffset
-    val i2cCtrlBase = apbBase + i2cCtrlOffset
     val timerCtrlBase = apbBase + timerCtrlOffset
+    val mi2cCtrlBase = apbBase + mi2cCtrlOffset
+    val si2cCtrlBase = apbBase + si2cCtrlOffset
 
     val svd = SvdGenerator(
       "slabware",
       peripherals = Seq(
         ledCtrl.svd("LEDs", baseAddress = ledCtrlBase),
-        i2cCtrl.svd("MI2C", baseAddress = i2cCtrlBase),
-        timerCtrl.svd("TIMER", baseAddress = timerCtrlBase)
+        timerCtrl.svd("TIMER", baseAddress = timerCtrlBase),
+        mi2cCtrl.svd("MI2C", baseAddress = mi2cCtrlBase),
+        si2cCtrl.svd("SI2C", baseAddress = si2cCtrlBase)
       ),
       description = "Slabware control system"
     )

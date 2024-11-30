@@ -36,6 +36,17 @@ class Slabware(
     // TMDS181 I2c
     val HDMI_CTL_SDA = inout(Analog(Bool))
     val HDMI_CTL_SCL = inout(Analog(Bool))
+
+    val HDMI_RX_SDA = inout(Analog(Bool))
+    val HDMI_RX_SCL = inout(Analog(Bool))
+
+    val HDMI_RX_HPD = out Bool ()
+
+    val DBG_UART_TX = out Bool ()
+    val DBG_UART_RX = out Bool ()
+
+    val HDMI_CLK_P = in Bool ()
+    val HDMI_CLK_N = in Bool ()
   }
   noIoPrefix()
 
@@ -69,14 +80,6 @@ class Slabware(
   )
 
   val spiClockArea = new ClockingArea(spiClockDomain) {
-    val leds = RegInit(B"8'x55")
-    val counter = Counter(100000000)
-
-    counter.increment()
-    when(counter.willOverflow) {
-      leds := ~leds
-    }
-
     val backlightEnable = False
     // val backlightEnable = True
     val lcdDims = Range(0, numLcdDims)
@@ -98,14 +101,64 @@ class Slabware(
     )
 
     val slabControl = new SlabControl()
+
+    io.LED := slabControl.io.leds
+    io.HDMI_RX_HPD := True
   }
 
-  io.LED := spiClockArea.slabControl.io.leds
-
-  val i2cIo = new Area {
-    io.HDMI_CTL_SCL := OpenDrainBuffer(spiClockArea.slabControl.io.i2c.scl)
-    io.HDMI_CTL_SDA := OpenDrainBuffer(spiClockArea.slabControl.io.i2c.sda)
+  val hdmiCtlI2cIo = new Area {
+    io.HDMI_CTL_SCL := OpenDrainBuffer(
+      spiClockArea.slabControl.io.hdmiCtrlI2c.scl
+    )
+    io.HDMI_CTL_SDA := OpenDrainBuffer(
+      spiClockArea.slabControl.io.hdmiCtrlI2c.sda
+    )
   }
+
+  val ddcI2cIo = new Area {
+    io.HDMI_RX_SCL := OpenDrainBuffer(
+      spiClockArea.slabControl.io.ddcI2c.scl
+    )
+    io.HDMI_RX_SDA := OpenDrainBuffer(
+      spiClockArea.slabControl.io.ddcI2c.sda
+    )
+  }
+
+  val gteClkBuf = new IBufDsGte2()
+  gteClkBuf.io.I := io.HDMI_CLK_P
+  gteClkBuf.io.IB := io.HDMI_CLK_N
+  gteClkBuf.io.CEB := False
+
+  val gteClkDomain = ClockDomain
+  val gteClockDomain = ClockDomain(
+    clock = gteClkBuf.io.O,
+    config = ClockDomainConfig(
+      clockEdge = RISING,
+      resetKind = BOOT,
+      resetActiveLevel = HIGH
+    )
+  )
+
+  val gteClockArea = new ClockingArea(gteClockDomain) {
+    val divider = RegInit(U(0, 7 bits))
+    divider := divider + 1
+
+    io.DBG_UART_TX := divider(6)
+    io.DBG_UART_RX := divider(6)
+  }
+}
+
+class IBufDsGte2() extends BlackBox {
+  val io = new Bundle {
+    val I = in Bool ()
+    val IB = in Bool ()
+    val CEB = in Bool ()
+    val O = out Bool ()
+    val ODIV2 = out Bool ()
+  }
+
+  noIoPrefix()
+  setBlackBoxName("IBUFDS_GTE2")
 }
 
 object TopLevelVerilog {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Generated from SpinalHDL. Don't edit. -->
-<!-- Date generated: Tue Nov 05 12:07:42 MST 2024 -->
+<!-- Date generated: Thu Nov 28 22:05:10 MST 2024 -->
 <device schemaVersion="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
   xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_0.xsd">
   <name>slabware</name>
@@ -33,9 +33,190 @@
     </registers>
   </peripheral>
   <peripheral>
+    <name>TIMER</name>
+    <description>Timer</description>
+    <baseAddress>0x10000400</baseAddress>
+    <registers>
+      <register>
+        <name>prescale</name>
+        <description>Prescale</description>
+        <addressOffset>0x4</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xffff</resetMask>
+        <fields>
+          <field>
+            <name>value</name>
+            <description>Timer prescale divisor</description>
+            <bitRange>[15:0]</bitRange>
+            <access>write-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>control</name>
+        <description>Control</description>
+        <addressOffset>0x8</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0x7</resetMask>
+        <fields>
+          <field>
+            <name>enable</name>
+            <description>Timer enable</description>
+            <bitRange>[0:0]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>clear</name>
+            <description>Clear prescaler and counter</description>
+            <bitRange>[1:1]</bitRange>
+            <access>write-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>interruptEnable</name>
+            <description>Interrupt enable</description>
+            <bitRange>[2:2]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>counter</name>
+        <description>Counter</description>
+        <addressOffset>0xc</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xffff</resetMask>
+        <fields>
+          <field>
+            <name>counter</name>
+            <description>Counter value</description>
+            <bitRange>[15:0]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>interruptStatus</name>
+        <description>Interrupt status</description>
+        <addressOffset>0x10</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0x7</resetMask>
+        <fields>
+          <field>
+            <name>overflowStatus</name>
+            <description>Overflow interrupt status (set to clear)</description>
+            <bitRange>[0:0]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>compare0Status</name>
+            <description>Compare0 interrupt status (set to clear)</description>
+            <bitRange>[1:1]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>compare1Status</name>
+            <description>Compare1 interrupt status (set to clear)</description>
+            <bitRange>[2:2]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>interruptMask</name>
+        <description>Interrupt mask</description>
+        <addressOffset>0x14</addressOffset>
+        <size>32</size>
+        <resetValue>0x7</resetValue>
+        <resetMask>0x7</resetMask>
+        <fields>
+          <field>
+            <name>overflowMask</name>
+            <description>Mask overflow interrupt</description>
+            <bitRange>[0:0]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>compare0Mask</name>
+            <description>Mask compare0 interrupt</description>
+            <bitRange>[1:1]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>compare1Mask</name>
+            <description>Mask compare1 interrupt</description>
+            <bitRange>[2:2]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>compare0</name>
+        <description>Compare 0</description>
+        <addressOffset>0x18</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xffff</resetMask>
+        <fields>
+          <field>
+            <name>value</name>
+            <description>Compare 0 value</description>
+            <bitRange>[15:0]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>compare1</name>
+        <description>Compare 1</description>
+        <addressOffset>0x1c</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xffff</resetMask>
+        <fields>
+          <field>
+            <name>value</name>
+            <description>Compare 1 value</description>
+            <bitRange>[15:0]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+    </registers>
+  </peripheral>
+  <peripheral>
     <name>MI2C</name>
     <description>I2C controller</description>
-    <baseAddress>0x10000400</baseAddress>
+    <baseAddress>0x10000800</baseAddress>
     <registers>
       <register>
         <name>rxData</name>
@@ -55,11 +236,11 @@
           </field>
           <field>
             <name>valid</name>
-            <description>Receive data valid (cleared on read)</description>
+            <description>Receive data valid (set to clear)</description>
             <bitRange>[8:8]</bitRange>
-            <access>read-only</access>
-            <modifiedWriteValues>modify</modifiedWriteValues>
-            <readAction>clear</readAction>
+            <access>read-write</access>
+            <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            <readAction>modify</readAction>
           </field>
           <field>
             <name>listen</name>
@@ -280,7 +461,7 @@
         </fields>
       </register>
       <register>
-        <name>tlow</name>
+        <name>TLOW</name>
         <description>I2C low timing</description>
         <addressOffset>0x14</addressOffset>
         <size>32</size>
@@ -298,7 +479,7 @@
         </fields>
       </register>
       <register>
-        <name>thigh</name>
+        <name>THIGH</name>
         <description>I2C high timing</description>
         <addressOffset>0x18</addressOffset>
         <size>32</size>
@@ -316,7 +497,7 @@
         </fields>
       </register>
       <register>
-        <name>tbuf</name>
+        <name>TBUF</name>
         <description>I2C idle timing</description>
         <addressOffset>0x1c</addressOffset>
         <size>32</size>
@@ -490,7 +671,7 @@
         </fields>
       </register>
       <register>
-        <name>timeout</name>
+        <name>TIMEOUT</name>
         <description>Timeout</description>
         <addressOffset>0x28</addressOffset>
         <size>32</size>
@@ -588,22 +769,72 @@
     </registers>
   </peripheral>
   <peripheral>
-    <name>TIMER</name>
-    <description>Timer</description>
-    <baseAddress>0x10000800</baseAddress>
+    <name>SI2C</name>
+    <description>I2C controller</description>
+    <baseAddress>0x10000c00</baseAddress>
     <registers>
       <register>
-        <name>prescale</name>
-        <description>Prescale</description>
+        <name>rxData</name>
+        <description>Receive data</description>
+        <addressOffset>0x0</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0x3ff</resetMask>
+        <fields>
+          <field>
+            <name>value</name>
+            <description>Receive data value</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>valid</name>
+            <description>Receive data valid (set to clear)</description>
+            <bitRange>[8:8]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>listen</name>
+            <description>Listen for receive data</description>
+            <bitRange>[9:9]</bitRange>
+            <access>write-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>rxAck</name>
+        <description>Receive acknowledge</description>
         <addressOffset>0x4</addressOffset>
         <size>32</size>
         <resetValue>0x0</resetValue>
-        <resetMask>0xffff</resetMask>
+        <resetMask>0x7</resetMask>
         <fields>
           <field>
             <name>value</name>
-            <description>Timer prescale divisor</description>
-            <bitRange>[15:0]</bitRange>
+            <description>Receive acknowledge value</description>
+            <bitRange>[0:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>valid</name>
+            <description>Receive acknowledge valid (cleared on read)</description>
+            <bitRange>[1:1]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>clear</readAction>
+          </field>
+          <field>
+            <name>listen</name>
+            <description>Listen for receive acknowledge</description>
+            <bitRange>[2:2]</bitRange>
             <access>write-only</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
@@ -611,85 +842,205 @@
         </fields>
       </register>
       <register>
-        <name>control</name>
-        <description>Control</description>
+        <name>txData</name>
+        <description>Transmit data</description>
         <addressOffset>0x8</addressOffset>
         <size>32</size>
-        <resetValue>0x0</resetValue>
-        <resetMask>0x7</resetMask>
+        <resetValue>0x500</resetValue>
+        <resetMask>0xfff</resetMask>
         <fields>
           <field>
-            <name>enable</name>
-            <description>Timer enable</description>
-            <bitRange>[0:0]</bitRange>
-            <access>read-write</access>
-            <modifiedWriteValues>modify</modifiedWriteValues>
-            <readAction>modify</readAction>
-          </field>
-          <field>
-            <name>clear</name>
-            <description>Clear prescaler and counter</description>
-            <bitRange>[1:1]</bitRange>
+            <name>value</name>
+            <description>Transmit data value</description>
+            <bitRange>[7:0]</bitRange>
             <access>write-only</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
           </field>
           <field>
-            <name>interruptEnable</name>
-            <description>Interrupt enable</description>
+            <name>valid</name>
+            <description>Transmit data valid</description>
+            <bitRange>[8:8]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>enable</name>
+            <description>Transmit data enable</description>
+            <bitRange>[9:9]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>repeat</name>
+            <description>Transmit data repeat</description>
+            <bitRange>[10:10]</bitRange>
+            <access>write-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>disableOnDataConflict</name>
+            <description>Disable on data conflict</description>
+            <bitRange>[11:11]</bitRange>
+            <access>write-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>txAck</name>
+        <description>Transmit acknowledge</description>
+        <addressOffset>0xc</addressOffset>
+        <size>32</size>
+        <resetValue>0xa</resetValue>
+        <resetMask>0x1f</resetMask>
+        <fields>
+          <field>
+            <name>value</name>
+            <description>Transmit acknowledge value</description>
+            <bitRange>[0:0]</bitRange>
+            <access>write-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>valid</name>
+            <description>Transmit acknowledge valid</description>
+            <bitRange>[1:1]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>enable</name>
+            <description>Transmit acknowledge enable</description>
             <bitRange>[2:2]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
           </field>
-        </fields>
-      </register>
-      <register>
-        <name>counter</name>
-        <description>Counter</description>
-        <addressOffset>0xc</addressOffset>
-        <size>32</size>
-        <resetValue>0x0</resetValue>
-        <resetMask>0xffff</resetMask>
-        <fields>
           <field>
-            <name>counter</name>
-            <description>Counter value</description>
-            <bitRange>[15:0]</bitRange>
-            <access>read-write</access>
+            <name>repeat</name>
+            <description>Transmit acknowledge repeat</description>
+            <bitRange>[3:3]</bitRange>
+            <access>write-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>disableOnDataConflict</name>
+            <description>Disable on data conflict</description>
+            <bitRange>[4:4]</bitRange>
+            <access>write-only</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
           </field>
         </fields>
       </register>
       <register>
-        <name>interruptStatus</name>
-        <description>Interrupt status</description>
+        <name>interrupt</name>
+        <description>Interrupt control</description>
         <addressOffset>0x10</addressOffset>
         <size>32</size>
         <resetValue>0x0</resetValue>
-        <resetMask>0x7</resetMask>
+        <resetMask>0xfff</resetMask>
         <fields>
           <field>
-            <name>overflowStatus</name>
-            <description>Overflow interrupt status (set to clear)</description>
+            <name>rxDataEnable</name>
+            <description>RX data interrupt enable</description>
             <bitRange>[0:0]</bitRange>
             <access>read-write</access>
-            <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
           </field>
           <field>
-            <name>compare0Status</name>
-            <description>Compare0 interrupt status (set to clear)</description>
+            <name>rxAckEnable</name>
+            <description>RX ack interrupt enable</description>
             <bitRange>[1:1]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>txDataEnable</name>
+            <description>TX data interrupt enable</description>
+            <bitRange>[2:2]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>txAckEnable</name>
+            <description>TX ack interrupt enable</description>
+            <bitRange>[3:3]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>startEnable</name>
+            <description>I2C Start enable</description>
+            <bitRange>[4:4]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>startFlag</name>
+            <description>I2C Start flag</description>
+            <bitRange>[5:5]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>oneToClear</modifiedWriteValues>
             <readAction>modify</readAction>
           </field>
           <field>
-            <name>compare1Status</name>
-            <description>Compare1 interrupt status (set to clear)</description>
-            <bitRange>[2:2]</bitRange>
+            <name>restartEnable</name>
+            <description>I2C Restart enable</description>
+            <bitRange>[6:6]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>restartFlag</name>
+            <description>I2C Restart flag</description>
+            <bitRange>[7:7]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>endEnable</name>
+            <description>I2C END enable</description>
+            <bitRange>[8:8]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>endFlag</name>
+            <description>I2C END flag</description>
+            <bitRange>[9:9]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>dropEnable</name>
+            <description>I2C Drop enable</description>
+            <bitRange>[10:10]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>dropFlag</name>
+            <description>I2C Drop flag</description>
+            <bitRange>[11:11]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>oneToClear</modifiedWriteValues>
             <readAction>modify</readAction>
@@ -697,69 +1048,113 @@
         </fields>
       </register>
       <register>
-        <name>interruptMask</name>
-        <description>Interrupt mask</description>
+        <name>samplingClockDivider</name>
+        <description>Sampling clock</description>
         <addressOffset>0x14</addressOffset>
         <size>32</size>
-        <resetValue>0x7</resetValue>
-        <resetMask>0x7</resetMask>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xfff</resetMask>
         <fields>
           <field>
-            <name>overflowMask</name>
-            <description>Mask overflow interrupt</description>
-            <bitRange>[0:0]</bitRange>
-            <access>read-write</access>
-            <modifiedWriteValues>modify</modifiedWriteValues>
-            <readAction>modify</readAction>
-          </field>
-          <field>
-            <name>compare0Mask</name>
-            <description>Mask compare0 interrupt</description>
-            <bitRange>[1:1]</bitRange>
-            <access>read-write</access>
-            <modifiedWriteValues>modify</modifiedWriteValues>
-            <readAction>modify</readAction>
-          </field>
-          <field>
-            <name>compare1Mask</name>
-            <description>Mask compare1 interrupt</description>
-            <bitRange>[2:2]</bitRange>
-            <access>read-write</access>
+            <name>samplingClockDivider</name>
+            <description>Sampling clock divider</description>
+            <bitRange>[11:0]</bitRange>
+            <access>write-only</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
           </field>
         </fields>
       </register>
       <register>
-        <name>compare0</name>
-        <description>Compare 0</description>
+        <name>TIMEOUT</name>
+        <description>Timeout</description>
         <addressOffset>0x18</addressOffset>
         <size>32</size>
         <resetValue>0x0</resetValue>
-        <resetMask>0xffff</resetMask>
+        <resetMask>0xfffff</resetMask>
         <fields>
           <field>
-            <name>value</name>
-            <description>Compare 0 value</description>
-            <bitRange>[15:0]</bitRange>
-            <access>read-write</access>
+            <name>timeout</name>
+            <description>Timeout</description>
+            <bitRange>[19:0]</bitRange>
+            <access>write-only</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
           </field>
         </fields>
       </register>
       <register>
-        <name>compare1</name>
-        <description>Compare 1</description>
+        <name>tsuData</name>
+        <description>TSU Data</description>
         <addressOffset>0x1c</addressOffset>
         <size>32</size>
         <resetValue>0x0</resetValue>
-        <resetMask>0xffff</resetMask>
+        <resetMask>0x3f</resetMask>
         <fields>
           <field>
-            <name>value</name>
-            <description>Compare 1 value</description>
-            <bitRange>[15:0]</bitRange>
+            <name>tsuData</name>
+            <description></description>
+            <bitRange>[5:0]</bitRange>
+            <access>write-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>slaveStatus</name>
+        <description>Slave status</description>
+        <addressOffset>0x20</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0x7</resetMask>
+        <fields>
+          <field>
+            <name>inFrame</name>
+            <description>In Frame</description>
+            <bitRange>[0:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>sdaRead</name>
+            <description>SDA read</description>
+            <bitRange>[1:1]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>sclRead</name>
+            <description>SCL read</description>
+            <bitRange>[2:2]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>slaveOverride</name>
+        <description>Slave override</description>
+        <addressOffset>0x24</addressOffset>
+        <size>32</size>
+        <resetValue>0x3</resetValue>
+        <resetMask>0x3</resetMask>
+        <fields>
+          <field>
+            <name>sda</name>
+            <description>Force the SDA pin low when cleared</description>
+            <bitRange>[0:0]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>scl</name>
+            <description>Force the SCL pin low when cleared</description>
+            <bitRange>[1:1]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>

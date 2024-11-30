@@ -67,52 +67,6 @@ impl core::fmt::Debug for Leds {
 }
 #[doc = "LED control"]
 pub mod leds;
-#[doc = "I2C controller"]
-pub struct Mi2c {
-    _marker: PhantomData<*const ()>,
-}
-unsafe impl Send for Mi2c {}
-impl Mi2c {
-    #[doc = r"Pointer to the register block"]
-    pub const PTR: *const mi2c::RegisterBlock = 0x1000_0400 as *const _;
-    #[doc = r"Return the pointer to the register block"]
-    #[inline(always)]
-    pub const fn ptr() -> *const mi2c::RegisterBlock {
-        Self::PTR
-    }
-    #[doc = r" Steal an instance of this peripheral"]
-    #[doc = r""]
-    #[doc = r" # Safety"]
-    #[doc = r""]
-    #[doc = r" Ensure that the new instance of the peripheral cannot be used in a way"]
-    #[doc = r" that may race with any existing instances, for example by only"]
-    #[doc = r" accessing read-only or write-only registers, or by consuming the"]
-    #[doc = r" original peripheral and using critical sections to coordinate"]
-    #[doc = r" access between multiple new instances."]
-    #[doc = r""]
-    #[doc = r" Additionally, other software such as HALs may rely on only one"]
-    #[doc = r" peripheral instance existing to ensure memory safety; ensure"]
-    #[doc = r" no stolen instances are passed to such software."]
-    pub unsafe fn steal() -> Self {
-        Self {
-            _marker: PhantomData,
-        }
-    }
-}
-impl Deref for Mi2c {
-    type Target = mi2c::RegisterBlock;
-    #[inline(always)]
-    fn deref(&self) -> &Self::Target {
-        unsafe { &*Self::PTR }
-    }
-}
-impl core::fmt::Debug for Mi2c {
-    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-        f.debug_struct("Mi2c").finish()
-    }
-}
-#[doc = "I2C controller"]
-pub mod mi2c;
 #[doc = "Timer"]
 pub struct Timer {
     _marker: PhantomData<*const ()>,
@@ -120,7 +74,7 @@ pub struct Timer {
 unsafe impl Send for Timer {}
 impl Timer {
     #[doc = r"Pointer to the register block"]
-    pub const PTR: *const timer::RegisterBlock = 0x1000_0800 as *const _;
+    pub const PTR: *const timer::RegisterBlock = 0x1000_0400 as *const _;
     #[doc = r"Return the pointer to the register block"]
     #[inline(always)]
     pub const fn ptr() -> *const timer::RegisterBlock {
@@ -159,6 +113,98 @@ impl core::fmt::Debug for Timer {
 }
 #[doc = "Timer"]
 pub mod timer;
+#[doc = "I2C controller"]
+pub struct Mi2c {
+    _marker: PhantomData<*const ()>,
+}
+unsafe impl Send for Mi2c {}
+impl Mi2c {
+    #[doc = r"Pointer to the register block"]
+    pub const PTR: *const mi2c::RegisterBlock = 0x1000_0800 as *const _;
+    #[doc = r"Return the pointer to the register block"]
+    #[inline(always)]
+    pub const fn ptr() -> *const mi2c::RegisterBlock {
+        Self::PTR
+    }
+    #[doc = r" Steal an instance of this peripheral"]
+    #[doc = r""]
+    #[doc = r" # Safety"]
+    #[doc = r""]
+    #[doc = r" Ensure that the new instance of the peripheral cannot be used in a way"]
+    #[doc = r" that may race with any existing instances, for example by only"]
+    #[doc = r" accessing read-only or write-only registers, or by consuming the"]
+    #[doc = r" original peripheral and using critical sections to coordinate"]
+    #[doc = r" access between multiple new instances."]
+    #[doc = r""]
+    #[doc = r" Additionally, other software such as HALs may rely on only one"]
+    #[doc = r" peripheral instance existing to ensure memory safety; ensure"]
+    #[doc = r" no stolen instances are passed to such software."]
+    pub unsafe fn steal() -> Self {
+        Self {
+            _marker: PhantomData,
+        }
+    }
+}
+impl Deref for Mi2c {
+    type Target = mi2c::RegisterBlock;
+    #[inline(always)]
+    fn deref(&self) -> &Self::Target {
+        unsafe { &*Self::PTR }
+    }
+}
+impl core::fmt::Debug for Mi2c {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("Mi2c").finish()
+    }
+}
+#[doc = "I2C controller"]
+pub mod mi2c;
+#[doc = "I2C controller"]
+pub struct Si2c {
+    _marker: PhantomData<*const ()>,
+}
+unsafe impl Send for Si2c {}
+impl Si2c {
+    #[doc = r"Pointer to the register block"]
+    pub const PTR: *const si2c::RegisterBlock = 0x1000_0c00 as *const _;
+    #[doc = r"Return the pointer to the register block"]
+    #[inline(always)]
+    pub const fn ptr() -> *const si2c::RegisterBlock {
+        Self::PTR
+    }
+    #[doc = r" Steal an instance of this peripheral"]
+    #[doc = r""]
+    #[doc = r" # Safety"]
+    #[doc = r""]
+    #[doc = r" Ensure that the new instance of the peripheral cannot be used in a way"]
+    #[doc = r" that may race with any existing instances, for example by only"]
+    #[doc = r" accessing read-only or write-only registers, or by consuming the"]
+    #[doc = r" original peripheral and using critical sections to coordinate"]
+    #[doc = r" access between multiple new instances."]
+    #[doc = r""]
+    #[doc = r" Additionally, other software such as HALs may rely on only one"]
+    #[doc = r" peripheral instance existing to ensure memory safety; ensure"]
+    #[doc = r" no stolen instances are passed to such software."]
+    pub unsafe fn steal() -> Self {
+        Self {
+            _marker: PhantomData,
+        }
+    }
+}
+impl Deref for Si2c {
+    type Target = si2c::RegisterBlock;
+    #[inline(always)]
+    fn deref(&self) -> &Self::Target {
+        unsafe { &*Self::PTR }
+    }
+}
+impl core::fmt::Debug for Si2c {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("Si2c").finish()
+    }
+}
+#[doc = "I2C controller"]
+pub mod si2c;
 #[no_mangle]
 static mut DEVICE_PERIPHERALS: bool = false;
 #[doc = r" All the peripherals."]
@@ -166,10 +212,12 @@ static mut DEVICE_PERIPHERALS: bool = false;
 pub struct Peripherals {
     #[doc = "LEDs"]
     pub leds: Leds,
-    #[doc = "MI2C"]
-    pub mi2c: Mi2c,
     #[doc = "TIMER"]
     pub timer: Timer,
+    #[doc = "MI2C"]
+    pub mi2c: Mi2c,
+    #[doc = "SI2C"]
+    pub si2c: Si2c,
 }
 impl Peripherals {
     #[doc = r" Returns all the peripherals *once*."]
@@ -193,8 +241,9 @@ impl Peripherals {
         DEVICE_PERIPHERALS = true;
         Peripherals {
             leds: Leds::steal(),
-            mi2c: Mi2c::steal(),
             timer: Timer::steal(),
+            mi2c: Mi2c::steal(),
+            si2c: Si2c::steal(),
         }
     }
 }
