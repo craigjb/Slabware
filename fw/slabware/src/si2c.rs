@@ -21,7 +21,7 @@ pub struct I2cSlave {
 impl I2cSlave {
     pub fn new(i2c: Si2c, address: u8) -> I2cSlave {
         defmt::debug!("Configuring SI2C clocks");
-        let sample_clock_divider = 1;
+        let sample_clock_divider = 10;
         i2c.sampling_clock_divider()
             .write(|w| unsafe { w.bits(sample_clock_divider) });
         defmt::debug!("SI2C sample clock divider set: {}", sample_clock_divider);
@@ -35,6 +35,9 @@ impl I2cSlave {
 
         defmt::debug!("Enabling SI2C interrupts");
         enable_custom_interrupt(SI2C_INTERRUPT_CODE);
+
+        i2c.tx_ack()
+            .write(|w| w.valid().clear_bit().enable().clear_bit());
 
         Self {
             regs: i2c,
@@ -65,9 +68,6 @@ impl I2cSlave {
 
     pub async fn read(&self, ack: AckKind) -> Result<u8, I2cSlaveError> {
         self.regs.rx_data().modify(|_, w| w.listen().set_bit());
-        self.regs
-            .interrupt()
-            .modify(|_, w| w.rx_data_enable().set_bit().end_enable().set_bit());
 
         self.regs.tx_ack().write(|w| {
             w.value()
@@ -81,22 +81,25 @@ impl I2cSlave {
                 .disable_on_data_conflict()
                 .clear_bit()
         });
+        self.regs
+            .interrupt()
+            .modify(|_, w| w.tx_ack_enable().set_bit().end_enable().set_bit());
 
         poll_fn(|cx| {
             self.waker.register(cx.waker());
 
-            let rx = self.regs.rx_data().read();
-            if rx.valid().bit_is_set() {
+            if self.regs.tx_ack().read().valid().bit_is_clear() {
                 self.regs.rx_data().write(|w| w.listen().clear_bit());
                 self.regs
                     .interrupt()
-                    .modify(|_, w| w.rx_data_enable().clear_bit().end_enable().clear_bit());
+                    .modify(|_, w| w.tx_ack_enable().clear_bit().end_enable().clear_bit());
+                let rx = self.regs.rx_data().read();
                 Poll::Ready(Ok(rx.value().bits()))
             } else if self.regs.slave_status().read().in_frame().bit_is_clear() {
                 self.regs.rx_data().write(|w| w.listen().clear_bit());
                 self.regs
                     .interrupt()
-                    .modify(|_, w| w.rx_data_enable().clear_bit().end_enable().clear_bit());
+                    .modify(|_, w| w.tx_ack_enable().clear_bit().end_enable().clear_bit());
                 Poll::Ready(Err(I2cSlaveError::FrameEnded))
             } else {
                 Poll::Pending
@@ -106,18 +109,6 @@ impl I2cSlave {
     }
 
     pub async fn write(&self, data: u8) -> AckKind {
-        self.regs.tx_data().write(|w| unsafe {
-            w.valid()
-                .set_bit()
-                .enable()
-                .set_bit()
-                .disable_on_data_conflict()
-                .clear_bit()
-                .value()
-                .bits(data)
-                .repeat()
-                .clear_bit()
-        });
         self.regs.tx_ack().write(|w| {
             w.value()
                 .set_bit()
@@ -128,6 +119,19 @@ impl I2cSlave {
                 .repeat()
                 .clear_bit()
                 .disable_on_data_conflict()
+                .clear_bit()
+        });
+
+        self.regs.tx_data().write(|w| unsafe {
+            w.valid()
+                .set_bit()
+                .enable()
+                .set_bit()
+                .disable_on_data_conflict()
+                .clear_bit()
+                .value()
+                .bits(data)
+                .repeat()
                 .clear_bit()
         });
         self.regs.rx_ack().write(|w| w.listen().set_bit());

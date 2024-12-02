@@ -1,3 +1,5 @@
+use embassy_time::Timer;
+
 use crate::i2c::AckKind;
 use crate::si2c::I2cSlave;
 
@@ -22,7 +24,7 @@ pub async fn ddc_edid(i2cs: I2cSlave) {
                 0xA1 => {
                     let mut count: usize = 0;
                     loop {
-                        let ack = i2cs.write(EDID_DATA[offset as usize]).await;
+                        let ack = i2cs.write(0).await;
                         offset = offset.wrapping_add(1);
                         count += 1;
                         if ack.is_nack() {
@@ -32,7 +34,7 @@ pub async fn ddc_edid(i2cs: I2cSlave) {
                     }
                 }
                 _ => {
-                    defmt::debug!("EDID ignored address: {}", addr);
+                    // defmt::debug!("EDID ignored address: {:#02X}", addr);
                 }
             }
         }

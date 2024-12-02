@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Generated from SpinalHDL. Don't edit. -->
-<!-- Date generated: Fri Nov 29 22:52:11 MST 2024 -->
+<!-- Date generated: Sun Dec 01 21:27:40 MST 2024 -->
 <device schemaVersion="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
   xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_0.xsd">
   <name>slabware</name>
@@ -341,7 +341,7 @@
         <description>Transmit acknowledge</description>
         <addressOffset>0xc</addressOffset>
         <size>32</size>
-        <resetValue>0xa</resetValue>
+        <resetValue>0x0</resetValue>
         <resetMask>0x1f</resetMask>
         <fields>
           <field>
@@ -896,7 +896,7 @@
         <description>Transmit acknowledge</description>
         <addressOffset>0xc</addressOffset>
         <size>32</size>
-        <resetValue>0xa</resetValue>
+        <resetValue>0x0</resetValue>
         <resetMask>0x1f</resetMask>
         <fields>
           <field>
@@ -1185,6 +1185,132 @@
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
           </field>
+        </fields>
+      </register>
+    </registers>
+  </peripheral>
+  <peripheral>
+    <name>HDMI</name>
+    <description>HDMI Receiver</description>
+    <baseAddress>0x10001000</baseAddress>
+    <registers>
+      <register>
+        <name>control</name>
+        <description>Control</description>
+        <addressOffset>0x0</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0x1</resetMask>
+        <fields>
+          <field>
+            <name>hpdEnable</name>
+            <description>Hot plug detect enable</description>
+            <bitRange>[0:0]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>status</name>
+        <description>Status</description>
+        <addressOffset>0x4</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0x1</resetMask>
+        <fields>
+          <field>
+            <name>cableDetect</name>
+            <description>Cable detect</description>
+            <bitRange>[0:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>clkDetDivisor</name>
+        <description>Clock detector divisor</description>
+        <addressOffset>0x8</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0x1ff</resetMask>
+        <fields>
+          <field>
+            <name>value</name>
+            <description>Divisor value</description>
+            <bitRange>[8:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>clkDetSampleRate</name>
+        <description>Clock detector sample rate</description>
+        <addressOffset>0xc</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xf</resetMask>
+        <fields>
+          <field>
+            <name>value</name>
+            <description>Sample rate in Hz</description>
+            <bitRange>[3:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>clkDetCount</name>
+        <description>Clock detector frequency count</description>
+        <addressOffset>0x10</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0x1ffff</resetMask>
+        <fields>
+          <field>
+            <name>value</name>
+            <description>Frequency counter value</description>
+            <bitRange>[16:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>clkDetTolerance</name>
+        <description>Clock detector tolerance</description>
+        <addressOffset>0x14</addressOffset>
+        <size>32</size>
+        <resetValue>0x1</resetValue>
+        <resetMask>0x1f</resetMask>
+        <fields>
+          <field>
+            <name>value</name>
+            <description>Tolerance for frequency change detection</description>
+            <bitRange>[4:0]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>edid</name>
+        <description>EDID RAM</description>
+        <addressOffset>0x200</addressOffset>
+        <size>2048</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0x0</resetMask>
+        <fields>
+
         </fields>
       </register>
     </registers>

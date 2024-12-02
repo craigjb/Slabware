@@ -48,7 +48,7 @@ async fn blink(leds: Leds) {
 async fn main(spawner: Spawner) {
     let peripherals = init();
 
-    unwrap!(spawner.spawn(blink(peripherals.leds)));
+    // unwrap!(spawner.spawn(blink(peripherals.leds)));
 
     let i2cm = mi2c::I2cMaster::new(peripherals.mi2c);
     let _retimer = unwrap!(
@@ -63,6 +63,19 @@ async fn main(spawner: Spawner) {
 
     let i2cs = si2c::I2cSlave::new(peripherals.si2c, 0x50);
     unwrap!(spawner.spawn(edid::ddc_edid(i2cs)));
+
+    let hdmi = peripherals.hdmi;
+    let divisor = hdmi.clk_det_divisor().read().value().bits();
+    defmt::debug!("HDMI clk det divisor: {}", divisor);
+    let sample_rate = hdmi.clk_det_sample_rate().read().value().bits();
+    defmt::debug!("HDMI clk det sample rate: {}", sample_rate);
+
+    hdmi.control().write(|w| w.hpd_enable().set_bit());
+    // loop {
+    //     Timer::after_secs(10).await;
+    //     let count = hdmi.clk_det_count().read().value().bits();
+    //     defmt::debug!("HDMI clk count: {}", count);
+    // }
 }
 
 #[export_name = "ExceptionHandler"]

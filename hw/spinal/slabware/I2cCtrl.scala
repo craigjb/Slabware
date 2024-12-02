@@ -134,7 +134,7 @@ class I2cCtrl[B <: BusDefinition.Bus](
       val valid = TXACK.field(
         Bool(),
         AccessType.RW,
-        resetValue = 1,
+        resetValue = 0,
         doc = "Transmit acknowledge valid"
       )
       val enable = TXACK.field(
@@ -146,7 +146,7 @@ class I2cCtrl[B <: BusDefinition.Bus](
       val repeat = TXACK.field(
         Bool(),
         AccessType.WO,
-        resetValue = 1,
+        resetValue = 0,
         doc = "Transmit acknowledge repeat"
       )
       val disableOnDataConflict = TXACK.field(

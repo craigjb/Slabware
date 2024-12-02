@@ -44,6 +44,7 @@ bin/
 *.cf
 *.json
 *.vcd
+*.swp
 !tester/src/test/resources/*.vhd
 
 

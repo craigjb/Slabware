@@ -6,6 +6,8 @@ import spinal.lib.bus.amba4.axi._
 import spinal.lib.io._
 import spinal.lib.blackbox.xilinx.s7.IOBUF
 
+import slabware.hdmirx.{HdmiIo, HdmiClk}
+
 class Slabware(
     numLcdDims: Int = 9,
     numSpiClusters: Int = 18
@@ -40,13 +42,15 @@ class Slabware(
     val HDMI_RX_SDA = inout(Analog(Bool))
     val HDMI_RX_SCL = inout(Analog(Bool))
 
-    val HDMI_RX_HPD = out Bool ()
-
-    val DBG_UART_TX = out Bool ()
-    val DBG_UART_RX = out Bool ()
-
+    // HDMI input
     val HDMI_CLK_P = in Bool ()
     val HDMI_CLK_N = in Bool ()
+
+    val HDMI_RX_HPD = out Bool ()
+    val HDMI_RX_PWR_DET = in Bool ()
+
+    // val DBG_UART_TX = out Bool ()
+    // val DBG_UART_RX = out Bool ()
   }
   noIoPrefix()
 
@@ -101,9 +105,12 @@ class Slabware(
     )
 
     val slabControl = new SlabControl()
-
+    slabControl.io.hdmi <> HdmiIo(
+      clk = HdmiClk(io.HDMI_CLK_P, io.HDMI_CLK_N),
+      hpd = io.HDMI_RX_HPD,
+      cableDetect = io.HDMI_RX_PWR_DET
+    )
     io.LED := slabControl.io.leds
-    io.HDMI_RX_HPD := True
   }
 
   val hdmiCtlI2cIo = new Area {
@@ -123,42 +130,6 @@ class Slabware(
       spiClockArea.slabControl.io.ddcI2c.sda
     )
   }
-
-  val gteClkBuf = new IBufDsGte2()
-  gteClkBuf.io.I := io.HDMI_CLK_P
-  gteClkBuf.io.IB := io.HDMI_CLK_N
-  gteClkBuf.io.CEB := False
-
-  val gteClkDomain = ClockDomain
-  val gteClockDomain = ClockDomain(
-    clock = gteClkBuf.io.O,
-    config = ClockDomainConfig(
-      clockEdge = RISING,
-      resetKind = BOOT,
-      resetActiveLevel = HIGH
-    )
-  )
-
-  val gteClockArea = new ClockingArea(gteClockDomain) {
-    val divider = RegInit(U(0, 7 bits))
-    divider := divider + 1
-
-    io.DBG_UART_TX := divider(6)
-    io.DBG_UART_RX := divider(6)
-  }
-}
-
-class IBufDsGte2() extends BlackBox {
-  val io = new Bundle {
-    val I = in Bool ()
-    val IB = in Bool ()
-    val CEB = in Bool ()
-    val O = out Bool ()
-    val ODIV2 = out Bool ()
-  }
-
-  noIoPrefix()
-  setBlackBoxName("IBUFDS_GTE2")
 }
 
 object TopLevelVerilog {
