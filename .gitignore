@@ -49,6 +49,7 @@ bin/
 
 
 simWorkspace/
+/xsim.dir
 tmp/
 null
 cpu.yaml

@@ -28,7 +28,6 @@ class I2cCtrl[B <: BusDefinition.Bus](
     import i2cCtrl.io._
 
     val frameReset = False
-    val valueRegWrite = False
 
     val i2cBuffer = I2c()
     i2cBuffer <> i2c
@@ -497,7 +496,6 @@ class I2cCtrl[B <: BusDefinition.Bus](
           when(!rxData.valid) {
             rxData.valueReg(7 - dataCounter) := bus.cmd.data
             dataCounter := dataCounter + 1
-            valueRegWrite := True
 
             when(dataCounter === 7) {
               rxData.valid setWhen (rxData.listen)

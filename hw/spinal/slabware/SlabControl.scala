@@ -20,7 +20,6 @@ class SlabControl extends Component {
   val io = new Bundle {
     val leds = out(Bits(8 bits))
     val hdmiCtrlI2c = master(I2c())
-    val ddcI2c = master(I2c())
     val hdmi = slave(new HdmiIo())
   }
 
@@ -114,12 +113,6 @@ class SlabControl extends Component {
   )
   cpuPlugins += mi2cInterruptPlugin
 
-  val si2cInterruptPlugin = new UserInterruptPlugin(
-    interruptName = "si2c",
-    code = 21
-  )
-  cpuPlugins += si2cInterruptPlugin
-
   val cpuConfig = VexRiscvConfig(
     plugins = cpuPlugins
   )
@@ -182,44 +175,23 @@ class SlabControl extends Component {
     val mi2cCtrl = new I2cCtrl(
       Apb3Bus,
       I2cSlaveMemoryMappedGenerics(
-        ctrlGenerics = I2cSlaveGenerics(
-          samplingWindowSize = 3,
-          samplingClockDividerWidth = 12 bits,
-          timeoutWidth = 20 bits
-        ),
-        addressFilterCount = 0,
+        ctrlGenerics = I2cSlaveGenerics(),
         masterGenerics = I2cMasterMemoryMappedGenerics(timerWidth = 16)
       )
     )
     io.hdmiCtrlI2c <> mi2cCtrl.io.i2c
     mi2cInterruptPlugin.interrupt := mi2cCtrl.io.interrupt
 
-    val si2cCtrl = new I2cCtrl(
-      Apb3Bus,
-      I2cSlaveMemoryMappedGenerics(
-        ctrlGenerics = I2cSlaveGenerics(
-          samplingWindowSize = 5,
-          samplingClockDividerWidth = 12 bits,
-          timeoutWidth = 20 bits
-        ),
-        addressFilterCount = 1,
-        masterGenerics = null
-      )
-    )
-    io.ddcI2c <> si2cCtrl.io.i2c
-    si2cInterruptPlugin.interrupt := si2cCtrl.io.interrupt
-
     val timerCtrl = new TimerCtrl(Apb3Bus)
     timerInterrupt := timerCtrl.io.interrupt
 
-    val hdmiRx = new HdmiRx(Apb3Bus)
+    val hdmiRx = new HdmiRx(Apb3Bus, edidBinPath = "SoundSlab.edid")
     hdmiRx.io.hdmi <> io.hdmi
 
     val ledCtrlOffset = 0x0
     val timerCtrlOffset = 0x400
     val mi2cCtrlOffset = 0x800
-    val si2cCtrlOffset = 0xc00
-    val hdmiRxOffset = 0x1000
+    val hdmiRxOffset = 0xc00
 
     val apbDecoder = Apb3Decoder(
       master = apbBridge.io.apb,
@@ -227,7 +199,6 @@ class SlabControl extends Component {
         (ledCtrl.io.bus -> (ledCtrlOffset, 1 kB)),
         (timerCtrl.io.bus -> (timerCtrlOffset, 1 kB)),
         (mi2cCtrl.io.bus -> (mi2cCtrlOffset, 1 kB)),
-        (si2cCtrl.io.bus -> (si2cCtrlOffset, 1 kB)),
         (hdmiRx.io.bus -> (hdmiRxOffset, 1 kB))
       )
     )
@@ -235,7 +206,6 @@ class SlabControl extends Component {
     val ledCtrlBase = apbBase + ledCtrlOffset
     val timerCtrlBase = apbBase + timerCtrlOffset
     val mi2cCtrlBase = apbBase + mi2cCtrlOffset
-    val si2cCtrlBase = apbBase + si2cCtrlOffset
     val hdmiRxBase = apbBase + hdmiRxOffset
 
     val svd = SvdGenerator(
@@ -244,7 +214,6 @@ class SlabControl extends Component {
         ledCtrl.svd("LEDs", baseAddress = ledCtrlBase),
         timerCtrl.svd("TIMER", baseAddress = timerCtrlBase),
         mi2cCtrl.svd("MI2C", baseAddress = mi2cCtrlBase),
-        si2cCtrl.svd("SI2C", baseAddress = si2cCtrlBase),
         hdmiRx.svd("HDMI", baseAddress = hdmiRxBase)
       ),
       description = "Slabware control system"

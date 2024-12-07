@@ -6,8 +6,10 @@ import spinal.lib.bus.regif.{AccessType, SymbolName}
 
 import slabware.{BusDefinition, SvdPeripheral}
 
-class HdmiRx[B <: BusDefinition.Bus](busDef: BusDefinition[B])
-    extends Component {
+class HdmiRx[B <: BusDefinition.Bus](
+    busDef: BusDefinition[B],
+    edidBinPath: String
+) extends Component {
   val AddressWidth = 10
   val DataWidth = 32
 
@@ -38,6 +40,9 @@ class HdmiRx[B <: BusDefinition.Bus](busDef: BusDefinition[B])
   val clockDetector = ClockDetector()
   clockDetector.io.hdmiTmdsClk := hdmiTmdsClk
   clockDetector.drive(busIf)
+
+  val edid = new Edid(edidBinPath = edidBinPath)
+  io.hdmi.ddc <> edid.io.ddc
 
   def svd(name: String, baseAddress: BigInt) = {
     SvdPeripheral(

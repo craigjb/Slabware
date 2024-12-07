@@ -8,8 +8,8 @@ import spinal.lib.bus.regif.{BusIf, AccessType, SymbolName}
 
 case class ClockDetector(
     dividerBits: Int = 8,
-    maxHdmiClkFreq: HertzNumber = HertzNumber(165e6),
-    sampleRate: HertzNumber = HertzNumber(10),
+    maxHdmiClkFreq: HertzNumber = 165 MHz,
+    sampleRate: HertzNumber = 1 kHz,
     toleranceBits: Int = 5
 ) extends Component {
 

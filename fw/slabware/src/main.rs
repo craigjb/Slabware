@@ -2,11 +2,9 @@
 #![no_main]
 
 mod custom_int;
-mod edid;
 mod i2c;
 mod mi2c;
 mod sealed_instance;
-mod si2c;
 mod time_driver;
 mod tmds181;
 
@@ -45,7 +43,7 @@ async fn blink(leds: Leds) {
 }
 
 #[embassy_executor::main]
-async fn main(spawner: Spawner) {
+async fn main(_spawner: Spawner) {
     let peripherals = init();
 
     // unwrap!(spawner.spawn(blink(peripherals.leds)));
@@ -61,21 +59,21 @@ async fn main(spawner: Spawner) {
             .await
     );
 
-    let i2cs = si2c::I2cSlave::new(peripherals.si2c, 0x50);
-    unwrap!(spawner.spawn(edid::ddc_edid(i2cs)));
-
     let hdmi = peripherals.hdmi;
     let divisor = hdmi.clk_det_divisor().read().value().bits();
     defmt::debug!("HDMI clk det divisor: {}", divisor);
     let sample_rate = hdmi.clk_det_sample_rate().read().value().bits();
     defmt::debug!("HDMI clk det sample rate: {}", sample_rate);
 
-    hdmi.control().write(|w| w.hpd_enable().set_bit());
-    // loop {
-    //     Timer::after_secs(10).await;
-    //     let count = hdmi.clk_det_count().read().value().bits();
-    //     defmt::debug!("HDMI clk count: {}", count);
-    // }
+    loop {
+        let cable_detect = hdmi.status().read().cable_detect().bit_is_set();
+        defmt::debug!("HDMI cable detect: {}", cable_detect);
+        let count = hdmi.clk_det_count().read().value().bits();
+        defmt::debug!("HDMI clk count: {}", count);
+
+        hdmi.control().write(|w| w.hpd_enable().bit(cable_detect));
+        Timer::after_secs(1).await;
+    }
 }
 
 #[export_name = "ExceptionHandler"]
@@ -95,7 +93,6 @@ fn interrupt_handler() {
     let cause = riscv::register::mcause::read().code();
     match cause {
         mi2c::MI2C_INTERRUPT_CODE => mi2c::handle_mi2c_interrupt(),
-        si2c::SI2C_INTERRUPT_CODE => si2c::handle_si2c_interrupt(),
         _ => {}
     }
 }

@@ -105,11 +105,9 @@ class Slabware(
     )
 
     val slabControl = new SlabControl()
-    slabControl.io.hdmi <> HdmiIo(
-      clk = HdmiClk(io.HDMI_CLK_P, io.HDMI_CLK_N),
-      hpd = io.HDMI_RX_HPD,
-      cableDetect = io.HDMI_RX_PWR_DET
-    )
+    slabControl.io.hdmi.clk <> HdmiClk(io.HDMI_CLK_P, io.HDMI_CLK_N)
+    io.HDMI_RX_HPD := slabControl.io.hdmi.hpd
+    slabControl.io.hdmi.cableDetect := io.HDMI_RX_PWR_DET
     io.LED := slabControl.io.leds
   }
 
@@ -124,10 +122,10 @@ class Slabware(
 
   val ddcI2cIo = new Area {
     io.HDMI_RX_SCL := OpenDrainBuffer(
-      spiClockArea.slabControl.io.ddcI2c.scl
+      spiClockArea.slabControl.io.hdmi.ddc.scl
     )
     io.HDMI_RX_SDA := OpenDrainBuffer(
-      spiClockArea.slabControl.io.ddcI2c.sda
+      spiClockArea.slabControl.io.hdmi.ddc.sda
     )
   }
 }
