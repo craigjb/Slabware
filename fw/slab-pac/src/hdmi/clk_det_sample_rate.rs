@@ -1,12 +1,12 @@
 #[doc = "Register `clkDetSampleRate` reader"]
 pub type R = crate::R<ClkDetSampleRateSpec>;
 #[doc = "Field `value` reader - Sample rate in Hz\n\n<div class=\"warning\">The field is <b>modified</b> in some way after a read operation.</div>"]
-pub type ValueR = crate::FieldReader;
+pub type ValueR = crate::FieldReader<u16>;
 impl R {
-    #[doc = "Bits 0:3 - Sample rate in Hz"]
+    #[doc = "Bits 0:9 - Sample rate in Hz"]
     #[inline(always)]
     pub fn value(&self) -> ValueR {
-        ValueR::new((self.bits & 0x0f) as u8)
+        ValueR::new((self.bits & 0x03ff) as u16)
     }
 }
 #[doc = "Clock detector sample rate\n\nYou can [`read`](crate::Reg::read) this register and get [`clk_det_sample_rate::R`](R). See [API](https://docs.rs/svd2rust/#read--modify--write-api)."]

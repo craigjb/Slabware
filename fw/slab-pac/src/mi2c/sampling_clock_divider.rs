@@ -1,9 +1,9 @@
 #[doc = "Register `samplingClockDivider` writer"]
 pub type W = crate::W<SamplingClockDividerSpec>;
 #[doc = "Field `samplingClockDivider` writer - Sampling clock divider"]
-pub type SamplingClockDividerW<'a, REG> = crate::FieldWriter<'a, REG, 12, u16>;
+pub type SamplingClockDividerW<'a, REG> = crate::FieldWriter<'a, REG, 10, u16>;
 impl W {
-    #[doc = "Bits 0:11 - Sampling clock divider"]
+    #[doc = "Bits 0:9 - Sampling clock divider"]
     #[inline(always)]
     #[must_use]
     pub fn sampling_clock_divider(&mut self) -> SamplingClockDividerW<SamplingClockDividerSpec> {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Generated from SpinalHDL. Don't edit. -->
-<!-- Date generated: Thu Dec 05 00:02:21 MST 2024 -->
+<!-- Date generated: Sat Dec 07 23:31:57 MST 2024 -->
 <device schemaVersion="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
   xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_0.xsd">
   <name>slabware</name>
@@ -778,13 +778,29 @@
         <description>Control</description>
         <addressOffset>0x0</addressOffset>
         <size>32</size>
-        <resetValue>0x0</resetValue>
-        <resetMask>0x1</resetMask>
+        <resetValue>0x2</resetValue>
+        <resetMask>0x7</resetMask>
         <fields>
           <field>
             <name>hpdEnable</name>
             <description>Hot plug detect enable</description>
             <bitRange>[0:0]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>pllPowerDown</name>
+            <description>PLL power down</description>
+            <bitRange>[1:1]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>pllReset</name>
+            <description>PLL reset</description>
+            <bitRange>[2:2]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
@@ -797,12 +813,20 @@
         <addressOffset>0x4</addressOffset>
         <size>32</size>
         <resetValue>0x0</resetValue>
-        <resetMask>0x1</resetMask>
+        <resetMask>0x3</resetMask>
         <fields>
           <field>
             <name>cableDetect</name>
             <description>Cable detect</description>
             <bitRange>[0:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>pllLock</name>
+            <description>PLL is locked</description>
+            <bitRange>[1:1]</bitRange>
             <access>read-only</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>

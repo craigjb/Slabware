@@ -52,9 +52,10 @@ case class ClockDetector(
     val tmdsClkDivider = CounterFreeRun(stateCount = divisor)
   }
 
-  val tmdsDividedClkCC = BufferCC(tmdsClkArea.tmdsClkDivider.msb)
+  val tmdsDividedClkCC =
+    BufferCC(tmdsClkArea.tmdsClkDivider.msb, randBoot = true)
   val counter = Counter(counterWidth bits)
-  when(tmdsDividedClkCC.rise()) {
+  when(tmdsDividedClkCC.rise(initAt = False)) {
     counter.increment()
   }
 
@@ -75,7 +76,7 @@ case class ClockDetector(
     }
   }
 
-  def drive(busIf: BusIf, defaultTolerance: Int = 1) = {
+  def drive(busIf: BusIf, defaultTolerance: Int = 1) = new Area {
     val divisorReg =
       busIf.newReg(doc = "Clock detector divisor").setName("clkDetDivisor")
     divisorReg.field(
