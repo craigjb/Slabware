@@ -40,8 +40,8 @@ object HdmiRxSim extends App {
         }
       }
 
-      dut.io.hdmi.ddc.scl.read #= true
-      dut.io.hdmi.ddc.sda.read #= true
+      dut.io.ddc.scl.read #= true
+      dut.io.ddc.sda.read #= true
       dut.io.hdmi.cableDetect #= false
 
       val apbDriver = new Apb3Driver(dut.io.bus, dut.clockDomain)

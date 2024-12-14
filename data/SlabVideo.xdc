@@ -972,3 +972,9 @@ set_property -dict { \
 set_property -dict { \
     PACKAGE_PIN AB13 \
   } [get_ports { HDMI_CLK_N }];
+set_property -dict { \
+    PACKAGE_PIN AE13 \
+  } [get_ports { HDMI_D0_P }];
+set_property -dict { \
+    PACKAGE_PIN AF13 \
+  } [get_ports { HDMI_D0_N }];

@@ -6,7 +6,7 @@ import spinal.lib.bus.amba4.axi._
 import spinal.lib.io._
 import spinal.lib.blackbox.xilinx.s7.IOBUF
 
-import slabware.hdmirx.{HdmiIo, HdmiClk}
+import slabware.hdmirx.{HdmiIo, DiffPair}
 
 class Slabware(
     numLcdDims: Int = 9,
@@ -39,18 +39,18 @@ class Slabware(
     val HDMI_CTL_SDA = inout(Analog(Bool))
     val HDMI_CTL_SCL = inout(Analog(Bool))
 
+    // HDMI DDC
     val HDMI_RX_SDA = inout(Analog(Bool))
     val HDMI_RX_SCL = inout(Analog(Bool))
 
     // HDMI input
-    val HDMI_CLK_P = in Bool ()
-    val HDMI_CLK_N = in Bool ()
-
-    val HDMI_RX_HPD = out Bool ()
-    val HDMI_RX_PWR_DET = in Bool ()
-
-    // val DBG_UART_TX = out Bool ()
-    // val DBG_UART_RX = out Bool ()
+    val hdmi = slave(HdmiIo(invertD0 = true))
+    hdmi.clk.p.setName("HDMI_CLK_P")
+    hdmi.clk.n.setName("HDMI_CLK_N")
+    hdmi.channel0.setName("HDMI_D0_P")
+    hdmi.channel0.setName("HDMI_D0_N")
+    hdmi.hpd.setName("HDMI_RX_HPD")
+    hdmi.cableDetect.setName("HDMI_RX_PWR_DET")
   }
   noIoPrefix()
 
@@ -105,9 +105,7 @@ class Slabware(
     )
 
     val slabControl = new SlabControl()
-    slabControl.io.hdmi.clk <> HdmiClk(io.HDMI_CLK_P, io.HDMI_CLK_N)
-    io.HDMI_RX_HPD := slabControl.io.hdmi.hpd
-    slabControl.io.hdmi.cableDetect := io.HDMI_RX_PWR_DET
+    slabControl.io.hdmi <> io.hdmi
     io.LED := slabControl.io.leds
   }
 
@@ -122,10 +120,10 @@ class Slabware(
 
   val ddcI2cIo = new Area {
     io.HDMI_RX_SCL := OpenDrainBuffer(
-      spiClockArea.slabControl.io.hdmi.ddc.scl
+      spiClockArea.slabControl.io.ddc.scl
     )
     io.HDMI_RX_SDA := OpenDrainBuffer(
-      spiClockArea.slabControl.io.hdmi.ddc.sda
+      spiClockArea.slabControl.io.ddc.sda
     )
   }
 }

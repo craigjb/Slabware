@@ -20,7 +20,8 @@ class SlabControl extends Component {
   val io = new Bundle {
     val leds = out(Bits(8 bits))
     val hdmiCtrlI2c = master(I2c())
-    val hdmi = slave(new HdmiIo())
+    val hdmi = slave(HdmiIo())
+    val ddc = master(I2c())
   }
 
   val sysReset = Bool()
@@ -187,6 +188,7 @@ class SlabControl extends Component {
 
     val hdmiRx = new HdmiRx(Apb3Bus, edidBinPath = "SoundSlab.edid")
     hdmiRx.io.hdmi <> io.hdmi
+    hdmiRx.io.ddc <> io.ddc
 
     val ledCtrlOffset = 0x0
     val timerCtrlOffset = 0x400

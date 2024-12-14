@@ -3,12 +3,14 @@ package slabware.hdmirx
 import spinal.core._
 import spinal.lib._
 import spinal.lib.bus.regif.{AccessType, SymbolName}
+import spinal.lib.com.i2c.I2c
 
 import slabware.{BusDefinition, SvdPeripheral}
 
 class HdmiRx[B <: BusDefinition.Bus](
     busDef: BusDefinition[B],
-    edidBinPath: String
+    edidBinPath: String,
+    simSpeedup: Boolean = false
 ) extends Component {
   val AddressWidth = 10
   val DataWidth = 32
@@ -16,6 +18,7 @@ class HdmiRx[B <: BusDefinition.Bus](
   val io = new Bundle {
     val bus = slave(busDef.createBus(AddressWidth, DataWidth))
     val hdmi = slave(new HdmiIo())
+    val ddc = master(I2c())
   }
 
   val busIf = busDef.createBusInterface(io.bus, (0, 0x100))
@@ -65,7 +68,7 @@ class HdmiRx[B <: BusDefinition.Bus](
   val clockDetectorBusIf = clockDetector.drive(busIf)
 
   val edid = new Edid(edidBinPath = edidBinPath)
-  io.hdmi.ddc <> edid.io.ddc
+  io.ddc <> edid.io.ddc
 
   val gtpCommon = new Gtpe2Common(
     pll0Config = Gtpe2PllConfig(
@@ -74,7 +77,8 @@ class HdmiRx[B <: BusDefinition.Bus](
       fbDiv45 = 5,
       simRefClkSelect = Gtpe2PllRefClk.GtRefClk0
     ),
-    pll1Config = Gtpe2PllConfig.default()
+    pll1Config = Gtpe2PllConfig.default(),
+    simResetSpeedup = simSpeedup
   )
   gtpCommon.io.drp.disable()
 
@@ -89,6 +93,15 @@ class HdmiRx[B <: BusDefinition.Bus](
   status.pllLock := BufferCC(gtpCommon.io.pll0.lock, randBoot = true)
 
   gtpCommon.io.pll1.disable()
+
+  val gtpChannel0 = new Gtpe2Channel()
+  gtpChannel0.io.resetSelection := False
+  gtpChannel0.io.clocking.fromGtpe2Common(gtpCommon)
+  gtpChannel0.io.drp.disable()
+  gtpChannel0.io.rx.disable()
+  gtpChannel0.io.tx.disable()
+  gtpChannel0.io.loopback.disable()
+  gtpChannel0.io.digitalMonitor.disable()
 
   def svd(name: String, baseAddress: BigInt) = {
     SvdPeripheral(
