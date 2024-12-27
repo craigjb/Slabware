@@ -71,6 +71,12 @@ async fn main(_spawner: Spawner) {
         if !wait_for_hdmi_pll_lock(&hdmi).await {
             continue;
         }
+        if !hdmi_gtp_reset(&hdmi).await {
+            continue;
+        }
+        if !hdmi_wait_valid_data(&hdmi).await {
+            continue;
+        }
         wait_for_hdmi_lost(&hdmi).await;
     }
 }
@@ -110,9 +116,81 @@ async fn hdmi_clock_detect(hdmi: &Hdmi) -> bool {
 
 fn hdmi_pll_reset(hdmi: &Hdmi) {
     defmt::info!("Resetting HDMI PLL");
-    hdmi.control()
-        .modify(|_, w| w.pll_power_down().clear_bit().pll_reset().set_bit());
+    hdmi.control().modify(|_, w| {
+        w.pll_power_down()
+            .clear_bit()
+            .pll_reset()
+            .set_bit()
+            .gtp_reset()
+            .set_bit()
+    });
     hdmi.control().modify(|_, w| w.pll_reset().clear_bit());
+}
+
+async fn hdmi_gtp_reset(hdmi: &Hdmi) -> bool {
+    defmt::info!("Resetting GTP transceiver");
+    hdmi.control().modify(|_, w| w.gtp_reset().clear_bit());
+
+    defmt::info!("Waiting for GTP reset");
+    let mut done = [false, false, false];
+    for _ in 0..200 {
+        if !done[0] && hdmi.channel0().read().gtp_reset_done().bit_is_set() {
+            defmt::info!("GTP reset 0 done");
+            done[0] = true;
+        }
+        if !done[1] && hdmi.channel1().read().gtp_reset_done().bit_is_set() {
+            defmt::info!("GTP reset 1 done");
+            done[1] = true;
+        }
+        if !done[2] && hdmi.channel2().read().gtp_reset_done().bit_is_set() {
+            defmt::info!("GTP reset 2 done");
+            done[2] = true;
+        }
+
+        if done.iter().all(|b| *b) {
+            defmt::info!("GTP resets done");
+            return true;
+        } else {
+            Timer::after_micros(10).await;
+        }
+    }
+    false
+}
+
+async fn hdmi_wait_valid_data(hdmi: &Hdmi) -> bool {
+    defmt::info!("Waiting for valid HDMI data");
+    let mut valid = [false, false, false];
+    for _ in 0..200 {
+        if !valid[0]
+            && hdmi.channel0().read().hdmi_data_out0valid().bit_is_set()
+            && hdmi.channel0().read().hdmi_data_out1valid().bit_is_set()
+        {
+            defmt::info!("\tHDMI data 0 is valid");
+            valid[0] = true;
+        }
+        if !valid[1]
+            && hdmi.channel1().read().hdmi_data_out0valid().bit_is_set()
+            && hdmi.channel1().read().hdmi_data_out1valid().bit_is_set()
+        {
+            defmt::info!("\tHDMI data 1 is valid");
+            valid[1] = true;
+        }
+        if !valid[2]
+            && hdmi.channel2().read().hdmi_data_out0valid().bit_is_set()
+            && hdmi.channel2().read().hdmi_data_out1valid().bit_is_set()
+        {
+            defmt::info!("\tHDMI data 2 is valid");
+            valid[2] = true;
+        }
+
+        if valid.iter().all(|b| *b) {
+            defmt::info!("HDMI data is valid");
+            return true;
+        } else {
+            Timer::after_micros(10).await;
+        }
+    }
+    false
 }
 
 async fn wait_for_hdmi_pll_lock(hdmi: &Hdmi) -> bool {

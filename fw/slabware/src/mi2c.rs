@@ -19,11 +19,11 @@ pub struct I2cMaster {
 impl I2cMaster {
     pub fn new(i2c: Mi2c) -> I2cMaster {
         defmt::debug!("Configuring MI2C clocks");
-        let sample_clock_divider = 10; // sample at 10 MHz
+        let sample_clock_divider = 10;
         i2c.sampling_clock_divider()
             .write(|w| unsafe { w.bits(sample_clock_divider) });
         defmt::debug!("MI2C sample clock divider set: {}", sample_clock_divider);
-        let half_cycle_time = 43;
+        let half_cycle_time = 57;
         i2c.thigh().write(|w| unsafe { w.bits(half_cycle_time) });
         i2c.tlow().write(|w| unsafe { w.bits(half_cycle_time) });
         i2c.tbuf().write(|w| unsafe { w.bits(half_cycle_time) });

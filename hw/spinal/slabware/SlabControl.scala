@@ -14,7 +14,7 @@ import spinal.lib.blackbox.xilinx.s7.BSCANE2
 import vexriscv._
 import vexriscv.plugin._
 
-import slabware.hdmirx.{HdmiRx, HdmiIo}
+import slabware.hdmirx.{HdmiRx, HdmiRxConfig, HdmiIo, HdmiVideo}
 
 class SlabControl extends Component {
   val io = new Bundle {
@@ -22,6 +22,7 @@ class SlabControl extends Component {
     val hdmiCtrlI2c = master(I2c())
     val hdmi = slave(HdmiIo())
     val ddc = master(I2c())
+    val videoOut = master(Flow(HdmiVideo()))
   }
 
   val sysReset = Bool()
@@ -186,9 +187,18 @@ class SlabControl extends Component {
     val timerCtrl = new TimerCtrl(Apb3Bus)
     timerInterrupt := timerCtrl.io.interrupt
 
-    val hdmiRx = new HdmiRx(Apb3Bus, edidBinPath = "SoundSlab.edid")
+    val hdmiRx =
+      new HdmiRx(
+        Apb3Bus,
+        HdmiRxConfig(
+          edidBinPath = "SoundSlab.edid",
+          invertChannels = Seq(true, false, false)
+        )
+      )
     hdmiRx.io.hdmi <> io.hdmi
     hdmiRx.io.ddc <> io.ddc
+
+    hdmiRx.io.videoOut >> io.videoOut
 
     val ledCtrlOffset = 0x0
     val timerCtrlOffset = 0x400
@@ -221,5 +231,9 @@ class SlabControl extends Component {
       description = "Slabware control system"
     )
     svd.dump("fw/slab-pac/slabware.svd")
+  }
+
+  def videoClkDomain: ClockDomain = {
+    sysClkArea.hdmiRx.videoClkDomain
   }
 }

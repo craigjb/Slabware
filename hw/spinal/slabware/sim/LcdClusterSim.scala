@@ -1,9 +1,11 @@
-package slabware
+package slabware.sim
 
 import spinal.core._
 import spinal.core.sim._
 
-object TestLcdCluster extends App {
+import slabware.LcdCluster
+
+object LcdClusterSim extends App {
   val BroadcastSequence = Seq(
     0x13a, 0x05, 0x136, 0xd0, 0x121, 0x111, 0x129
   )
@@ -17,7 +19,6 @@ object TestLcdCluster extends App {
       dut.io.broadcastIn.payload #= 0
       dut.io.frameEnable #= false
       dut.io.frameDataStream.valid #= false
-      dut.io.frameDataStream.payload #= 0
 
       dut.clockDomain.forkStimulus(period = 10)
       dut.clockDomain.waitSampling(1)
@@ -25,7 +26,7 @@ object TestLcdCluster extends App {
       for (data <- BroadcastSequence) {
         dut.io.broadcastIn.payload #= data
         dut.io.broadcastIn.valid #= true
-        dut.clockDomain.waitSampling(1)
+        dut.clockDomain.waitSamplingWhere(dut.io.broadcastIn.ready.toBoolean)
       }
       dut.io.broadcastIn.valid #= false
       dut.clockDomain.waitSampling((10 * 4 * BroadcastSequence.length) + 2)
@@ -36,37 +37,34 @@ object TestLcdCluster extends App {
         (10 * LcdCluster.FrameStartupSequence.length) + 2
       )
 
+      dut.io.frameDataStream.payload(0).valid #= false
+      dut.io.frameDataStream.payload(0).data #= 0x0000
+      dut.io.frameDataStream.payload(1).valid #= true
+      dut.io.frameDataStream.payload(1).data #= 0x0000
       dut.io.frameDataStream.valid #= true
-      dut.io.frameDataStream.payload #= 0x01020304
       dut.clockDomain.waitSamplingWhere(dut.io.frameDataStream.ready.toBoolean)
 
-      dut.io.frameDataStream.payload #= 0x05060708
-      dut.clockDomain.waitSamplingWhere(dut.io.frameDataStream.ready.toBoolean)
-
-      dut.io.frameDataStream.valid #= false
-      dut.io.frameDataStream.payload #= 0
-      dut.clockDomain.waitSamplingWhere(dut.io.frameDataStream.ready.toBoolean)
-      dut.clockDomain.waitSampling(10)
-
+      dut.io.frameDataStream.payload(0).valid #= true
+      dut.io.frameDataStream.payload(0).data #= 0x0001
+      dut.io.frameDataStream.payload(1).valid #= true
+      dut.io.frameDataStream.payload(1).data #= 0x0002
       dut.io.frameDataStream.valid #= true
-      dut.io.frameDataStream.payload #= 0x090a0b0c
-      dut.clockDomain.waitSamplingWhere(dut.io.frameDataStream.ready.toBoolean)
-      dut.io.frameDataStream.payload #= 0x0d0e0f10
-      dut.clockDomain.waitSamplingWhere(dut.io.frameDataStream.ready.toBoolean)
-      dut.io.frameDataStream.payload #= 0x11121314
       dut.clockDomain.waitSamplingWhere(dut.io.frameDataStream.ready.toBoolean)
 
       dut.io.frameDataStream.valid #= false
       dut.clockDomain.waitSampling(10 * 4)
-      dut.clockDomain.waitSampling(10)
 
-      dut.io.frameDataStream.valid #= true
-      dut.io.frameDataStream.payload #= 0x090a0b0c
-      for (i <- 0 until (128 * 128)) {
+      for (i <- 3 until ((128 * 128) / 2 + 10)) {
+        dut.io.frameDataStream.valid #= true
+        dut.io.frameDataStream.payload(0).valid #= true
+        dut.io.frameDataStream.payload(0).data #= i
+        dut.io.frameDataStream.payload(1).valid #= true
+        dut.io.frameDataStream.payload(1).data #= i + 1
         dut.clockDomain.waitSamplingWhere(
           dut.io.frameDataStream.ready.toBoolean
         )
       }
-      dut.clockDomain.waitSampling(10)
+      dut.io.frameDataStream.valid #= false
+      dut.clockDomain.waitSampling(10 * 30)
     }
 }

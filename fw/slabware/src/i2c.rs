@@ -11,15 +11,4 @@ impl AckKind {
             Self::Nack => true,
         }
     }
-
-    pub fn from_value(value: bool) -> Self {
-        match value {
-            false => Self::Ack,
-            true => Self::Nack,
-        }
-    }
-
-    pub fn is_nack(&self) -> bool {
-        *self == AckKind::Nack
-    }
 }

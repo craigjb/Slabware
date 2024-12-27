@@ -6,12 +6,17 @@ import spinal.core._
 import spinal.lib._
 import spinal.lib.bus.regif.{BusIf, AccessType, SymbolName}
 
-case class ClockDetector(
+case class ClockDetectorConfig(
     dividerBits: Int = 8,
     maxHdmiClkFreq: HertzNumber = 165 MHz,
     sampleRate: HertzNumber = 1 kHz,
     toleranceBits: Int = 5
+)
+
+case class ClockDetector(
+    config: ClockDetectorConfig
 ) extends Component {
+  import config._
 
   val divisor = (1 << dividerBits)
   val maxDividedHdmiClkFreq = (maxHdmiClkFreq / divisor)

@@ -11,7 +11,11 @@ import slabware.hdmirx._
 object ClockDetectorSim extends App {
 
   class ClockDetectorDut() extends Component {
-    val clockDetector = ClockDetector(sampleRate = 1000 Hz)
+    val clockDetector = ClockDetector(
+      ClockDetectorConfig(
+        sampleRate = 1000 Hz
+      )
+    )
 
     val io = new Bundle {
       val bus = slave(Apb3(addressWidth = 8, dataWidth = 32))

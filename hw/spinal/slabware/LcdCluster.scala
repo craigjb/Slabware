@@ -57,6 +57,11 @@ object LcdCluster {
   }
 }
 
+case class PixelData() extends Bundle {
+  val valid = Bool()
+  val data = Bits(16 bits)
+}
+
 class LcdCluster() extends Component {
   import LcdCluster._
 
@@ -64,7 +69,7 @@ class LcdCluster() extends Component {
     val spiBus = out(SpiBus())
     val broadcastIn = slave(Stream(Bits(9 bits)))
     val frameEnable = in Bool ()
-    val frameDataStream = slave(Stream(Bits(32 bits)))
+    val frameDataStream = slave(Stream(Vec.fill(2)(PixelData())))
   }
 
   io.spiBus.cs.setAsReg().init(0)
@@ -83,10 +88,17 @@ class LcdCluster() extends Component {
 
   val frameX = RegInit(U(0, 7 bits))
   val frameY = RegInit(U(0, 7 bits))
-  val frameDataRem = RegInit(B(0, 24 bits))
+  val pixelDataRem = RegInit(B(0, 8 bits))
+
+  val singlePixelStream = Stream(PixelData())
+  val adapter = StreamWidthAdapter(
+    io.frameDataStream,
+    singlePixelStream,
+    order=LOWER_FIRST
+  )
 
   val frameDataReady = RegInit(False)
-  io.frameDataStream.ready := frameDataReady
+  singlePixelStream.ready := frameDataReady
 
   val fsm = new StateMachine {
     broadcastPopReady := False
@@ -96,13 +108,16 @@ class LcdCluster() extends Component {
     val idle: State = new State with EntryPoint {
       onEntry {
         broadcastPopReady := True
+        io.spiBus.cs := 0
+        frameX := 0
+        frameY := 0
+        frameDataReady := True
       }
       whenIsActive {
-        when(io.frameEnable) {
-          io.spiBus.cs := 0
+        frameDataReady := True
+        when(io.frameEnable && !io.broadcastIn.valid) {
           goto(frameStartupStates.head)
         } elsewhen (broadcastStream.fire) {
-          io.spiBus.cs := 0
           lcdSpiDataIn := broadcastStream.payload(7 downto 0)
           lcdSpiIsCmd := broadcastStream.payload(8)
           goto(broadcastLoad)
@@ -195,12 +210,16 @@ class LcdCluster() extends Component {
         when(!io.frameEnable) {
           goto(idle)
         } otherwise {
-          when(!lcdSpiValid && io.frameDataStream.fire) {
-            frameDataRem := io.frameDataStream.payload(23 downto 0)
+          when(!lcdSpiValid && singlePixelStream.fire) {
+            lcdSpiDataIn := singlePixelStream.payload.data(15 downto 8)
+            pixelDataRem := singlePixelStream.payload.data(7 downto 0)
 
-            lcdSpiDataIn := io.frameDataStream.payload(31 downto 24)
-            lcdSpiIsCmd := False
-            lcdSpiValid := True
+            when(singlePixelStream.payload.valid) {
+              lcdSpiIsCmd := False
+              lcdSpiValid := True
+            } otherwise {
+              goto(frameData0)
+            }
           } elsewhen (lcdSpiValid) {
             when(lcdSpi.io.input.fire) {
               goto(frameData1)
@@ -217,7 +236,7 @@ class LcdCluster() extends Component {
     val frameData1: State = new State {
       onEntry {
         lcdSpiValid := True
-        lcdSpiDataIn := frameDataRem(23 downto 16)
+        lcdSpiDataIn := pixelDataRem
         lcdSpiIsCmd := False
       }
       whenIsActive {
@@ -225,52 +244,13 @@ class LcdCluster() extends Component {
           goto(idle)
         } otherwise {
           when(lcdSpi.io.input.fire) {
-            goto(frameData2)
-          } otherwise {
-            lcdSpiValid := True
-          }
-        }
-      }
-    }
-
-    val frameData2: State = new State {
-      onEntry {
-        lcdSpiValid := True
-        lcdSpiDataIn := frameDataRem(15 downto 8)
-        lcdSpiIsCmd := False
-      }
-      whenIsActive {
-        when(!io.frameEnable) {
-          goto(idle)
-        } otherwise {
-          when(lcdSpi.io.input.fire) {
-            goto(frameData3)
-          } otherwise {
-            lcdSpiValid := True
-          }
-        }
-      }
-    }
-
-    val frameData3: State = new State {
-      onEntry {
-        lcdSpiValid := True
-        lcdSpiDataIn := frameDataRem(7 downto 0)
-        lcdSpiIsCmd := False
-      }
-      whenIsActive {
-        when(!io.frameEnable) {
-          goto(idle)
-        } otherwise {
-          when(lcdSpi.io.input.fire) {
-            frameX := frameX + 2
-            when(frameX === LcdWidth - 2) {
+            frameX := frameX + 1
+            val atLineEnd = (frameX === LcdWidth - 1)
+            when(atLineEnd) {
               frameY := frameY + 1
             }
 
-            when(
-              frameX === LcdWidth - 2 && frameY === LcdHeight - 1
-            ) {
+            when(atLineEnd && (frameY === LcdHeight - 1)) {
               goto(frameNextCs)
             } otherwise {
               goto(frameData0)

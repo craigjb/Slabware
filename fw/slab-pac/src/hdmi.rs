@@ -7,6 +7,9 @@ pub struct RegisterBlock {
     clk_det_sample_rate: ClkDetSampleRate,
     clk_det_count: ClkDetCount,
     clk_det_tolerance: ClkDetTolerance,
+    channel0: Channel0,
+    channel1: Channel1,
+    channel2: Channel2,
 }
 impl RegisterBlock {
     #[doc = "0x00 - Control"]
@@ -38,6 +41,21 @@ impl RegisterBlock {
     #[inline(always)]
     pub const fn clk_det_tolerance(&self) -> &ClkDetTolerance {
         &self.clk_det_tolerance
+    }
+    #[doc = "0x18 - Channel 0 status"]
+    #[inline(always)]
+    pub const fn channel0(&self) -> &Channel0 {
+        &self.channel0
+    }
+    #[doc = "0x1c - Channel 1 status"]
+    #[inline(always)]
+    pub const fn channel1(&self) -> &Channel1 {
+        &self.channel1
+    }
+    #[doc = "0x20 - Channel 2 status"]
+    #[inline(always)]
+    pub const fn channel2(&self) -> &Channel2 {
+        &self.channel2
     }
 }
 #[doc = "control (rw) register accessor: Control\n\nYou can [`read`](crate::Reg::read) this register and get [`control::R`]. You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`control::W`]. You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@control`]
@@ -76,3 +94,21 @@ module"]
 pub type ClkDetTolerance = crate::Reg<clk_det_tolerance::ClkDetToleranceSpec>;
 #[doc = "Clock detector tolerance"]
 pub mod clk_det_tolerance;
+#[doc = "channel0 (r) register accessor: Channel 0 status\n\nYou can [`read`](crate::Reg::read) this register and get [`channel0::R`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@channel0`]
+module"]
+#[doc(alias = "channel0")]
+pub type Channel0 = crate::Reg<channel0::Channel0Spec>;
+#[doc = "Channel 0 status"]
+pub mod channel0;
+#[doc = "channel1 (r) register accessor: Channel 1 status\n\nYou can [`read`](crate::Reg::read) this register and get [`channel1::R`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@channel1`]
+module"]
+#[doc(alias = "channel1")]
+pub type Channel1 = crate::Reg<channel1::Channel1Spec>;
+#[doc = "Channel 1 status"]
+pub mod channel1;
+#[doc = "channel2 (r) register accessor: Channel 2 status\n\nYou can [`read`](crate::Reg::read) this register and get [`channel2::R`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@channel2`]
+module"]
+#[doc(alias = "channel2")]
+pub type Channel2 = crate::Reg<channel2::Channel2Spec>;
+#[doc = "Channel 2 status"]
+pub mod channel2;

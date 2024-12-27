@@ -10,7 +10,7 @@ import slabware.hdmirx.{HdmiIo, DiffPair}
 
 class Slabware(
     numLcdDims: Int = 9,
-    numSpiClusters: Int = 18
+    numSpiClusters: Int = 36
 ) extends Component {
 
   val io = new Bundle {
@@ -44,13 +44,21 @@ class Slabware(
     val HDMI_RX_SCL = inout(Analog(Bool))
 
     // HDMI input
-    val hdmi = slave(HdmiIo(invertD0 = true))
+    val hdmi = slave(HdmiIo())
     hdmi.clk.p.setName("HDMI_CLK_P")
     hdmi.clk.n.setName("HDMI_CLK_N")
-    hdmi.channel0.setName("HDMI_D0_P")
-    hdmi.channel0.setName("HDMI_D0_N")
+    hdmi.channels(0).p.setName("HDMI_D0_P")
+    hdmi.channels(0).n.setName("HDMI_D0_N")
+    hdmi.channels(1).p.setName("HDMI_D1_P")
+    hdmi.channels(1).n.setName("HDMI_D1_N")
+    hdmi.channels(2).p.setName("HDMI_D2_P")
+    hdmi.channels(2).n.setName("HDMI_D2_N")
     hdmi.hpd.setName("HDMI_RX_HPD")
     hdmi.cableDetect.setName("HDMI_RX_PWR_DET")
+
+    // Debug
+    val DBG_UART_TX = out Bool ()
+    val DBG_UART_RX = out Bool ()
   }
   noIoPrefix()
 
@@ -68,7 +76,7 @@ class Slabware(
     val clockGen = new ClockGen(
       multiplier = 10.0,
       divider = 1,
-      clkOutDivider = 20
+      clkOutDivider = 15
     )
   }
 
@@ -84,8 +92,7 @@ class Slabware(
   )
 
   val spiClockArea = new ClockingArea(spiClockDomain) {
-    val backlightEnable = False
-    // val backlightEnable = True
+    val backlightEnable = True
     val lcdDims = Range(0, numLcdDims)
       .map(index =>
         LcdDim(
@@ -94,19 +101,24 @@ class Slabware(
         )
       )
 
+    val slabControl = new SlabControl()
+    slabControl.io.hdmi <> io.hdmi
+    io.LED := slabControl.io.leds
+
     val grid = SlabGrid(
+      videoClkDomain = slabControl.videoClkDomain,
+      numSpiClusters = numSpiClusters,
       lcdReset = io.RESET,
       scl = io.SCL,
       sda = io.SDA,
       dc = io.DC,
       dsa = io.DSA,
-      dsb = io.DSB,
-      numSpiClusters = numSpiClusters
+      dsb = io.DSB
     )
+    slabControl.io.videoOut >> grid.io.videoIn
 
-    val slabControl = new SlabControl()
-    slabControl.io.hdmi <> io.hdmi
-    io.LED := slabControl.io.leds
+    io.DBG_UART_TX := slabControl.sysClkArea.hdmiRx.io.videoOut.hSync.pull()
+    io.DBG_UART_RX := slabControl.sysClkArea.hdmiRx.io.videoOut.vSync.pull()
   }
 
   val hdmiCtlI2cIo = new Area {

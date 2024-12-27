@@ -3,16 +3,10 @@ package slabware.hdmirx
 import spinal.core._
 import spinal.lib._
 
-object DiffPair {
-  def apply(p: Bool, n: Bool, invertPolarity: Boolean = false) = {
-    val pair = new DiffPair(invertPolarity)
-    pair.p := p
-    pair.n := n
-    pair
-  }
-}
+import spinal.lib.blackbox.xilinx.s7.BUFG
+import spinal.lib.fsm._
 
-class DiffPair(val invertPolarity: Boolean = false) extends Bundle {
+case class DiffPair() extends Bundle {
   val p = Bool()
   val n = Bool()
 }
@@ -23,7 +17,7 @@ object IBufDsGte2 {
     buf.io.I := clkIn.p
     buf.io.IB := clkIn.n
     buf.io.CEB := !enable
-    clkOut := buf.io.O
+    clkOut := BUFG.on(buf.io.O)
     buf
   }
 }
@@ -211,8 +205,53 @@ class Gtpe2Common(
   setBlackBoxName("GTPE2_COMMON")
 }
 
+case class Gtp2eChannelClocking() extends Bundle {
+  val pll0Clk = Bool()
+  val pll0RefClk = Bool()
+  val pll1Clk = Bool()
+  val pll1RefClk = Bool()
+
+  def fromGtpe2Common(common: Gtpe2Common) = {
+    pll0Clk := common.io.pll0.outClk
+    pll0RefClk := common.io.pll0.outRefClk
+    pll1Clk := common.io.pll1.outClk
+    pll1RefClk := common.io.pll1.outRefClk
+  }
+}
+
+case class Gtp2eChannelDrp() extends Bundle with IMasterSlave {
+  val clk = in Bool () setName ("DRPCLK")
+  val addr = in UInt (9 bits) setName ("DRPADDR")
+  val dataIn = in Bits (16 bits) setName ("DRPDI")
+  val dataOut = out Bits (16 bits) setName ("DRPDO")
+  val enable = in Bool () setName ("DRPEN")
+  val writeEnable = in Bool () setName ("DRPWE")
+  val ready = out Bool () setName ("DRPRDY")
+
+  override def asMaster() = {
+    out(clk, addr, dataIn, enable, writeEnable)
+    in(dataOut, ready)
+  }
+
+  def disable() = {
+    clk.default(False)
+    addr := 0
+    dataIn := B"16'0"
+    enable := False
+    writeEnable := False
+  }
+}
+
 class Gtpe2Channel(
-    simResetSpeedup: Boolean = false
+    simResetSpeedup: Boolean = false,
+    drpClkDomain: ClockDomain = null,
+    rxUsrClkDomain: ClockDomain = null,
+    rxUsrClk2Domain: ClockDomain = null,
+    rxDataWidth: Int = 20,
+    rxOutDivider: Int = 4,
+    commaEnable: String = "10'b1111111111",
+    mCommaValue: String = "10'b1010000011",
+    pCommaValue: String = "10'b0101111100"
 ) extends BlackBox {
   val generic = new Generic {
     // Simulation
@@ -223,12 +262,12 @@ class Gtpe2Channel(
 
     // RX Byte and Word Alignment
     val ALIGN_COMMA_DOUBLE = "FALSE"
-    val ALIGN_COMMA_ENABLE = B"10'b1111111111"
+    val ALIGN_COMMA_ENABLE = B(commaEnable)
     val ALIGN_COMMA_WORD = 1
     val ALIGN_MCOMMA_DET = "TRUE"
-    val ALIGN_MCOMMA_VALUE = B"10'b1010000011"
+    val ALIGN_MCOMMA_VALUE = B(mCommaValue)
     val ALIGN_PCOMMA_DET = "TRUE"
-    val ALIGN_PCOMMA_VALUE = B"10'b0101111100"
+    val ALIGN_PCOMMA_VALUE = B(pCommaValue)
     val SHOW_REALIGN_COMMA = "TRUE"
     val RXSLIDE_AUTO_WAIT = 7
     val RXSLIDE_MODE = "OFF"
@@ -293,7 +332,11 @@ class Gtpe2Channel(
     val ES_VERT_OFFSET = B"9'b000000000"
 
     // FPGA RX Interface
-    val RX_DATA_WIDTH = 20
+    assert(
+      Seq(16, 20, 32, 40).contains(rxDataWidth),
+      "rxDataWidth must be 16, 20, 32, or 40"
+    )
+    val RX_DATA_WIDTH = rxDataWidth
 
     // PMA
     val OUTREFCLK_SEL_INV = B"2'b11"
@@ -345,7 +388,12 @@ class Gtpe2Channel(
     val RX_DEFER_RESET_BUF_EN = "TRUE"
 
     // CDR
-    val RXCDR_CFG = B"83'h0001107FE206021041010"
+    val RXCDR_CFG = rxOutDivider match {
+      // Table 4-13 (UG482 v1.9)
+      case 1     => B"83'h0_0011_07FE_2060_2104_1010"
+      case 2     => B"83'h0_0011_07FE_2060_2108_1010"
+      case 4 | 8 => B"83'h0_0011_07FE_0860_2110_1010"
+    }
     val RXCDR_FR_RESET_ON_EIDLE = B"1'b0"
     val RXCDR_HOLD_DURING_EIDLE = B"1'b0"
     val RXCDR_PH_RESET_ON_EIDLE = B"1'b0"
@@ -463,7 +511,11 @@ class Gtpe2Channel(
     val SATA_PLL_CFG = "VCO_3000MHZ"
 
     // RX Fabric Clock Output Control
-    val RXOUT_DIV = 1
+    assert(
+      Seq(1, 2, 4, 8).contains(rxOutDivider),
+      "rxOutDivider must be 1, 2, 4, or 8"
+    )
+    val RXOUT_DIV = rxOutDivider
 
     // TX Fabric Clock Output Control
     val TXOUT_DIV = 1
@@ -529,43 +581,32 @@ class Gtpe2Channel(
   val io = new Bundle {
     val resetSelection = in Bool () setName ("GTRESETSEL")
 
-    val drp = new Bundle {
-      val clk = in Bool () setName ("DRPCLK")
-      val addr = in UInt (9 bits) setName ("DRPADDR")
-      val dataIn = in Bits (16 bits) setName ("DRPDI")
-      val dataOut = out Bits (16 bits) setName ("DRPDO")
-      val enable = in Bool () setName ("DRPEN")
-      val writeEnable = in Bool () setName ("DRPWE")
-      val ready = out Bool () setName ("DRPRDY")
-
-      def disable() = {
-        clk := False
-        addr := 0
-        dataIn := B"16'0"
-        enable := False
-        writeEnable := False
-      }
+    val drp = slave(Gtp2eChannelDrp())
+    drp.clk.setName("DRPCLK")
+    ClockDomainTag(drpClkDomain)(
+      drp.addr.setName("DRPADDR"),
+      drp.dataIn.setName("DRPDI"),
+      drp.dataOut.setName("DRPDO"),
+      drp.enable.setName("DRPEN"),
+      drp.writeEnable.setName("DRPWE"),
+      drp.ready.setName("DRPRDY")
+    )
+    if (drpClkDomain != null) {
+      mapClockDomain(drpClkDomain, drp.clk)
     }
 
-    val clocking = new Bundle {
-      val pll0Clk = in Bool () setName ("PLL0CLK")
-      val pll0RefClk = in Bool () setName ("PLL0REFCLK")
-      val pll1Clk = in Bool () setName ("PLL1CLK")
-      val pll1RefClk = in Bool () setName ("PLL1REFCLK")
-
-      def fromGtpe2Common(common: Gtpe2Common) = {
-        pll0Clk := common.io.pll0.outClk
-        pll0RefClk := common.io.pll0.outRefClk
-        pll1Clk := common.io.pll1.outClk
-        pll1RefClk := common.io.pll1.outRefClk
-      }
-    }
+    val clocking = in(Gtp2eChannelClocking())
+    clocking.pll0Clk.setName("PLL0CLK")
+    clocking.pll0RefClk.setName("PLL0REFCLK")
+    clocking.pll1Clk.setName("PLL1CLK")
+    clocking.pll1RefClk.setName("PLL1REFCLK")
 
     val rx = new Bundle {
       val powerDown = in Bits (2 bits) setName ("RXPD")
 
       val reset = in Bool () setName ("GTRXRESET")
       val resetDone = out Bool () setName ("RXRESETDONE")
+      ClockDomainTag(rxUsrClk2Domain)(resetDone)
 
       val pmaReset = in Bool () setName ("RXPMARESET")
       val pmaResetDone = out Bool () setName ("RXPMARESETDONE")
@@ -601,6 +642,27 @@ class Gtpe2Channel(
         val usrClk2 = in Bool () setName ("RXUSRCLK2")
         val usrReady = in Bool () setName ("RXUSERRDY")
 
+        if (rxUsrClkDomain != null) {
+          mapClockDomain(rxUsrClkDomain, usrClk)
+        }
+
+        if (rxUsrClk2Domain != null) {
+          mapClockDomain(rxUsrClk2Domain, usrClk2)
+        }
+
+        def staticSysClk(pmaClkPll: Int, rxOutClkPll: Int) = {
+          assert(
+            (0 to 1).contains(pmaClkPll),
+            "sysClkSelect must be PLL0 or PLL1"
+          )
+          assert(
+            (0 to 1).contains(rxOutClkPll),
+            "sysClkSelect must be PLL0 or PLL1"
+          )
+          sysClkSelect(0) := Bool(pmaClkPll == 1)
+          sysClkSelect(1) := Bool(rxOutClkPll == 1)
+        }
+
         def disable() = {
           sysClkSelect := B"2'0"
           usrClk := False
@@ -610,7 +672,7 @@ class Gtpe2Channel(
       }
 
       val analogFrontEnd = new Bundle {
-        val input = in(new DiffPair())
+        val input = in(DiffPair())
         input.p.setName("GTPRXP")
         input.n.setName("GTPRXN")
 
@@ -628,6 +690,13 @@ class Gtpe2Channel(
         val electricalIdle = out Bool () setName ("RXELECIDLE")
         val electricalIdleMode = in Bits (2 bits) setName ("RXELECIDLEMODE")
         val sigValidClk = in Bool () setName ("SIGVALIDCLK")
+
+        ClockDomainTag(rxUsrClk2Domain)(
+          comInitDetect,
+          comSasDetect,
+          comWakeDetect,
+          electricalIdle
+        )
 
         def disable() = {
           reset := False
@@ -676,14 +745,32 @@ class Gtpe2Channel(
         val outClkSelect = in Bits (3 bits) setName ("RXOUTCLKSEL")
         val outClk = out Bool () setName ("RXOUTCLK")
 
-        val rateMode = in Bool () setName ("RXRATEMODE")
-        val rate = in Bits (3 bits) setName ("RXRATE")
-        val rateDone = out Bool () setName ("RXRATEDONE")
+        def rxOutClkPma(): Bool = {
+          outClkSelect := B"3'010"
+          outClk
+        }
 
         def disable() = {
           outClkSelect := B"3'011"
-          rateMode := False
-          rate := B"3'0"
+          rate.disable()
+        }
+
+        val rate = new Bundle {
+          val mode = in Bool () setName ("RXRATEMODE")
+          val divider = in Bits (3 bits) setName ("RXRATE")
+          val done = out Bool () setName ("RXRATEDONE")
+
+          ClockDomainTag(rxUsrClk2Domain)(done)
+
+          def syncMode() = {
+            mode := False
+            ClockDomainTag(rxUsrClk2Domain)(divider)
+          }
+
+          def disable() = {
+            mode := False
+            divider := B"3'0"
+          }
         }
       }
 
@@ -692,6 +779,8 @@ class Gtpe2Channel(
         val mode = in Bool () setName ("EYESCANMODE")
         val trigger = in Bool () setName ("EYESCANTRIGGER")
         val dataErr = out Bool () setName ("EYESCANDATAERROR")
+
+        ClockDomainTag(rxUsrClk2Domain)(trigger)
 
         def disable() = {
           reset := False
@@ -713,6 +802,12 @@ class Gtpe2Channel(
         val prbsPatternSelect = in Bits (3 bits) setName ("RXPRBSSEL")
         val prbsErr = out Bool () setName ("RXPRBSERR")
 
+        ClockDomainTag(rxUsrClk2Domain)(
+          prbsErrCounterReset,
+          prbsPatternSelect,
+          prbsErr
+        )
+
         def disable() = {
           prbsErrCounterReset := False
           prbsPatternSelect := B"3'0"
@@ -723,6 +818,11 @@ class Gtpe2Channel(
       val byteAlignment = new Bundle {
         val isAligned = out Bool () setName ("RXBYTEISALIGNED")
         val realign = out Bool () setName ("RXBYTEREALIGN")
+
+        ClockDomainTag(rxUsrClk2Domain)(
+          isAligned,
+          realign
+        )
       }
 
       // Comma alignment
@@ -732,6 +832,14 @@ class Gtpe2Channel(
         val mCommaEnable = in Bool () setName ("RXMCOMMAALIGNEN")
         val pCommaEnable = in Bool () setName ("RXPCOMMAALIGNEN")
         val slide = in Bool () setName ("RXSLIDE")
+
+        ClockDomainTag(rxUsrClk2Domain)(
+          detectEnable,
+          detect,
+          mCommaEnable,
+          pCommaEnable,
+          slide
+        )
 
         def disable() = {
           detectEnable := False
@@ -748,6 +856,14 @@ class Gtpe2Channel(
         val charIsK = out Bits (4 bits) setName ("RXCHARISK")
         val disparityErr = out Bits (4 bits) setName ("RXDISPERR")
         val notInTable = out Bits (4 bits) setName ("RXNOTINTABLE")
+
+        ClockDomainTag(rxUsrClk2Domain)(
+          enable,
+          charIsComma,
+          charIsK,
+          disparityErr,
+          notInTable
+        )
 
         def disable() = {
           enable := False
@@ -818,6 +934,8 @@ class Gtpe2Channel(
         val reset = in Bool () setName ("RXBUFRESET")
         val status = out Bits (3 bits) setName ("RXBUFSTATUS")
 
+        ClockDomainTag(rxUsrClk2Domain)(status)
+
         def disable() = {
           reset := False
         }
@@ -825,6 +943,7 @@ class Gtpe2Channel(
 
       val clockCorrection = new Bundle {
         val status = out Bits (2 bits) setName ("RXCLKCORCNT")
+        ClockDomainTag(rxUsrClk2Domain)(status)
       }
 
       val channelBonding = new Bundle {
@@ -837,6 +956,21 @@ class Gtpe2Channel(
         val level = in Bits (3 bits) setName ("RXCHBONDLEVEL")
         val output = out Bits (4 bits) setName ("RXCHBONDO")
         val input = in Bits (4 bits) setName ("RXCHBONDI")
+
+        ClockDomainTag(rxUsrClkDomain)(
+          output,
+          input
+        )
+
+        ClockDomainTag(rxUsrClk2Domain)(
+          enable,
+          master,
+          slave,
+          seqDetected,
+          isAligned,
+          realign,
+          level
+        )
 
         def disable() = {
           enable := False
@@ -857,6 +991,14 @@ class Gtpe2Channel(
         val header = out Bits (3 bits) setName ("RXHEADER")
         val startOfSeq = out Bits (2 bits) setName ("RXSTARTOFSEQ")
 
+        ClockDomainTag(rxUsrClk2Domain)(
+          slip,
+          dataValid,
+          headerValid,
+          header,
+          startOfSeq
+        )
+
         def disable() = {
           slip := False
         }
@@ -866,9 +1008,37 @@ class Gtpe2Channel(
         val valid = out Bool () setName ("RXVALID")
         val status = out Bits (3 bits) setName ("RXSTATUS")
         val phyStatus = out Bool () setName ("PHYSTATUS")
+
+        ClockDomainTag(rxUsrClk2Domain)(
+          valid,
+          phyStatus,
+          status
+        )
       }
 
-      val data = out Bits (32 bits) setName ("RXDATA")
+      val rawData = out Bits (32 bits) setName ("RXDATA")
+      ClockDomainTag(rxUsrClk2Domain)(rawData)
+
+      def data(decoder8b10bBypass: Boolean): Bits = {
+        if (decoder8b10bBypass) {
+          Cat(
+            decoder8b10b.disparityErr(3),
+            decoder8b10b.charIsK(3),
+            rawData(31 downto 24),
+            decoder8b10b.disparityErr(2),
+            decoder8b10b.charIsK(2),
+            rawData(23 downto 16),
+            decoder8b10b.disparityErr(1),
+            decoder8b10b.charIsK(1),
+            rawData(15 downto 8),
+            decoder8b10b.disparityErr(0),
+            decoder8b10b.charIsK(0),
+            rawData(7 downto 0)
+          )
+        } else {
+          rawData
+        }
+      }
     }
 
     val tx = new Bundle {
@@ -1024,14 +1194,20 @@ class Gtpe2Channel(
         val outClkSelect = in Bits (3 bits) setName ("TXOUTCLKSEL")
         val outClk = out Bool () setName ("TXOUTCLK")
 
-        val rateMode = in Bool () setName ("TXRATEMODE")
-        val rate = in Bits (3 bits) setName ("TXRATE")
-        val rateDone = out Bool () setName ("TXRATEDONE")
-
         def disable() = {
           outClkSelect := B"3'011"
-          rateMode := False
-          rate := B"3'0"
+          rate.disable()
+        }
+
+        val rate = new Bundle {
+          val mode = in Bool () setName ("TXRATEMODE")
+          val divider = in Bits (3 bits) setName ("TXRATE")
+          val done = out Bool () setName ("TXRATEDONE")
+
+          def disable() = {
+            mode := False
+            divider := B"3'0"
+          }
         }
       }
 
@@ -1183,6 +1359,133 @@ class Gtpe2Channel(
       val txPiSoPd = in Bool () setName ("TXPISOPD") default (False)
       val txDiffPd = in Bool () setName ("TXDIFFPD") default (False)
       val cfgReset = in Bool () setName ("CFGRESET") default (False)
+    }
+  }
+
+  noIoPrefix()
+  setBlackBoxName("GTPE2_CHANNEL")
+}
+
+// Performs workaround for reset per:
+// 53561 - Design Advisory for Artix-7 FPGA GTP Transceivers:
+// RX Reset Sequence Requirement for Production Silicon
+class Gtpe2ChannelRxReset() extends Component {
+  val io = new Bundle {
+    val resetIn = in Bool ()
+    val drp = master(Gtp2eChannelDrp())
+    val rxReset = out Bool ()
+    val rxPmaResetDone = in Bool ()
+  }
+
+  def driveChannel(channel: Gtpe2Channel, resetIn: Bool) = {
+    io.resetIn := resetIn
+    channel.io.drp.addr := io.drp.addr
+    channel.io.drp.dataIn := io.drp.dataIn
+    io.drp.dataOut := channel.io.drp.dataOut
+    channel.io.drp.enable := io.drp.enable
+    channel.io.drp.writeEnable := io.drp.writeEnable
+    io.drp.ready := channel.io.drp.ready
+    channel.io.rx.reset := io.rxReset
+    io.rxPmaResetDone := channel.io.rx.pmaResetDone
+  }
+
+  io.drp.clk := ClockDomain.current.readClockWire
+  io.drp.addr := 0x11
+  io.drp.enable.setAsReg() init (False)
+  io.drp.writeEnable.setAsReg() init (False)
+  io.drp.dataIn.setAsReg().randBoot()
+  io.rxReset.setAsReg() init (False)
+
+  val backupBit = Reg(Bool) randBoot ()
+  val pmaResetDoneFall = io.rxPmaResetDone.fall(initAt = False)
+
+  val fsm = new StateMachine {
+    io.drp.enable := False
+    io.drp.writeEnable := False
+    io.rxReset := False
+
+    val idle: State = new State with EntryPoint {
+      whenIsActive {
+        when(io.resetIn) {
+          io.rxReset := True
+
+          // issue DRP read
+          io.drp.enable := True
+          io.drp.writeEnable := False
+          goto(waitForRead)
+        }
+      }
+    }
+
+    val waitForRead: State = new State {
+      whenIsActive {
+        io.rxReset := True
+
+        when(io.drp.ready) {
+          backupBit := io.drp.dataOut(11)
+          // clear bit 11
+          io.drp.dataIn(15 downto 12) := io.drp.dataOut(15 downto 12)
+          io.drp.dataIn(11) := False
+          io.drp.dataIn(10 downto 0) := io.drp.dataOut(10 downto 0)
+
+          // issue DRP write
+          io.drp.enable := True
+          io.drp.writeEnable := True
+
+          goto(waitForWrite)
+        }
+      }
+    }
+
+    val waitForWrite: State = new State {
+      whenIsActive {
+        io.rxReset := True
+
+        when(io.drp.ready) {
+          when(io.resetIn) {
+            goto(waitForResetInFall)
+          } otherwise {
+            goto(waitForPmaResetDone)
+          }
+        }
+      }
+    }
+
+    val waitForResetInFall: State = new State {
+      whenIsActive {
+        io.rxReset := True
+
+        when(!io.resetIn) {
+          goto(waitForPmaResetDone)
+        }
+      }
+    }
+
+    val waitForPmaResetDone: State = new State {
+      whenIsActive {
+        when(pmaResetDoneFall) {
+          goto(issueRestore)
+        }
+      }
+    }
+
+    val issueRestore: State = new State {
+      whenIsActive {
+        io.drp.dataIn(11) := backupBit
+
+        // issue DRP write
+        io.drp.enable := True
+        io.drp.writeEnable := True
+        goto(waitForRestore)
+      }
+    }
+
+    val waitForRestore: State = new State {
+      whenIsActive {
+        when(io.drp.ready) {
+          goto(idle)
+        }
+      }
     }
   }
 }

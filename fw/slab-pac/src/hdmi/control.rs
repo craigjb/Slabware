@@ -14,6 +14,10 @@ pub type PllPowerDownW<'a, REG> = crate::BitWriter<'a, REG>;
 pub type PllResetR = crate::BitReader;
 #[doc = "Field `pllReset` writer - PLL reset"]
 pub type PllResetW<'a, REG> = crate::BitWriter<'a, REG>;
+#[doc = "Field `gtpReset` reader - GTP transceiver reset\n\n<div class=\"warning\">The field is <b>modified</b> in some way after a read operation.</div>"]
+pub type GtpResetR = crate::BitReader;
+#[doc = "Field `gtpReset` writer - GTP transceiver reset"]
+pub type GtpResetW<'a, REG> = crate::BitWriter<'a, REG>;
 impl R {
     #[doc = "Bit 0 - Hot plug detect enable"]
     #[inline(always)]
@@ -29,6 +33,11 @@ impl R {
     #[inline(always)]
     pub fn pll_reset(&self) -> PllResetR {
         PllResetR::new(((self.bits >> 2) & 1) != 0)
+    }
+    #[doc = "Bit 3 - GTP transceiver reset"]
+    #[inline(always)]
+    pub fn gtp_reset(&self) -> GtpResetR {
+        GtpResetR::new(((self.bits >> 3) & 1) != 0)
     }
 }
 impl W {
@@ -49,6 +58,12 @@ impl W {
     #[must_use]
     pub fn pll_reset(&mut self) -> PllResetW<ControlSpec> {
         PllResetW::new(self, 2)
+    }
+    #[doc = "Bit 3 - GTP transceiver reset"]
+    #[inline(always)]
+    #[must_use]
+    pub fn gtp_reset(&mut self) -> GtpResetW<ControlSpec> {
+        GtpResetW::new(self, 3)
     }
 }
 #[doc = "Control\n\nYou can [`read`](crate::Reg::read) this register and get [`control::R`](R). You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`control::W`](W). You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api)."]

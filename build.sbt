@@ -18,9 +18,16 @@ lazy val vexRiscv = ProjectRef(file("../VexRiscv"), "root")
 lazy val root = (project in file("."))
   .settings(
     Compile / scalaSource := baseDirectory.value / "hw" / "spinal",
+    Test / scalaSource := baseDirectory.value / "hw" / "test",
     scalacOptions += s"-Xplugin:${new File(baseDirectory.value + s"/../SpinalHDL/idslplugin/target/scala-2.12/spinalhdl-idsl-plugin_2.12-$spinalVersion.jar")}",
-    scalacOptions += s"-Xplugin-require:idsl-plugin"
+    scalacOptions += s"-Xplugin-require:idsl-plugin",
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.14" % "test"
   )
-  .dependsOn(spinalCore, spinalLib, spinalIdslPlugin, vexRiscv)
+  .dependsOn(
+    spinalCore,
+    spinalLib,
+    spinalIdslPlugin,
+    vexRiscv
+  )
 
 fork := true

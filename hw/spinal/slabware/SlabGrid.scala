@@ -4,6 +4,8 @@ import spinal.core._
 import spinal.lib._
 import spinal.lib.fsm._
 
+import slabware.hdmirx.HdmiVideo
+
 object SlabGrid {
   val LcdPixelFormatSetCmd = 0x3a
   val LcdPixelFormat16Bits = 0x05
@@ -12,6 +14,9 @@ object SlabGrid {
   val LcdMemoryAccessInvertXY = 0xc0
   val LcdSleepOutCmd = 0x11
   val LcdDisplayOnCmd = 0x29
+
+  val DisplayWidth = LcdCluster.LcdWidth * 18
+  val DisplayHeight = LcdCluster.LcdWidth * 8
 
   sealed abstract class LcdStep {}
   object LcdStep {
@@ -28,7 +33,7 @@ object SlabGrid {
     LcdStep.Data(LcdPixelFormat16Bits),
     LcdStep.Cmd(LcdMemoryAccessCtrlCmd),
     LcdStep.Data(LcdMemoryAccessInvertXY),
-    LcdStep.Cmd(LcdDisplayInversionOnCmd),
+    // LcdStep.Cmd(LcdDisplayInversionOnCmd),
     LcdStep.Cmd(LcdSleepOutCmd),
     LcdStep.Wait(),
     LcdStep.Cmd(LcdDisplayOnCmd),
@@ -37,15 +42,16 @@ object SlabGrid {
   )
 
   def apply(
+      videoClkDomain: ClockDomain,
+      numSpiClusters: Int = 36,
       lcdReset: Bool,
       scl: Bits,
       sda: Bits,
       dc: Bits,
       dsa: Bits,
-      dsb: Bits,
-      numSpiClusters: Int = 18
+      dsb: Bits
   ): SlabGrid = {
-    val grid = new SlabGrid(numSpiClusters)
+    val grid = new SlabGrid(videoClkDomain, numSpiClusters)
     lcdReset := grid.io.lcdReset
 
     Range(0, numSpiClusters).foreach(index => {
@@ -59,7 +65,8 @@ object SlabGrid {
 }
 
 class SlabGrid(
-    numSpiClusters: Int = 18,
+    videoClkDomain: ClockDomain,
+    numSpiClusters: Int = 36,
     waitTime: TimeNumber = 120 ms
 ) extends Component {
   import SlabGrid._
@@ -67,6 +74,7 @@ class SlabGrid(
   val io = new Bundle {
     val lcdReset = out Bool ()
     val spiBus = Vec(out(LcdCluster.SpiBus()), numSpiClusters)
+    val videoIn = slave(Flow(HdmiVideo()))
   }
   val reset = RegInit(False)
   io.lcdReset := reset
@@ -80,21 +88,18 @@ class SlabGrid(
   val broadcastForks =
     StreamFork(broadcastStream, portCount = numSpiClusters, synchronous = true)
 
-  val patGens = Range(0, numSpiClusters).map(i => new PatGen(i))
-
-  val frameDataEnable = RegInit(False)
   val lcdClusters = io.spiBus
     .zip(broadcastForks)
-    .zip(patGens)
     .map {
-      case ((spiBus, broadcastFork), patGen) => {
+      case (spiBus, broadcastFork) => {
         val lcdCluster = new LcdCluster()
         spiBus := lcdCluster.io.spiBus
-        lcdCluster.io.frameEnable := frameDataEnable
         lcdCluster.io.broadcastIn << broadcastFork
-        lcdCluster.io.frameDataStream << patGen.io.frameDataOut
+        lcdCluster
       }
     }
+
+  val startupDone = RegInit(False)
 
   val fsm = new StateMachine {
     reset := True
@@ -102,8 +107,7 @@ class SlabGrid(
 
     val timeout = Timeout(waitTime)
     val startupStates = LcdStartupSequence.map(step => new State)
-    // setEntry(startupStates(0))
-    setEntry(startupStates.last)
+    setEntry(startupStates(0))
 
     startupStates.zipWithIndex.foreach {
       case (state, index) => {
@@ -153,12 +157,18 @@ class SlabGrid(
           }
           case LcdStep.FrameData => {
             state.onEntry {
-              // frameDataEnable := True
-              frameDataEnable := False
+              startupDone := True
             }
           }
         }
       }
     }
+  }
+
+  val gridArbiter = new GridArbiter(videoClkDomain)
+  io.videoIn >> gridArbiter.io.videoIn
+  for (i <- 0 until numSpiClusters) {
+    gridArbiter.io.frameDataOut(i) >> lcdClusters(i).io.frameDataStream
+    lcdClusters(i).io.frameEnable := gridArbiter.io.frameDataEnable && startupDone
   }
 }
