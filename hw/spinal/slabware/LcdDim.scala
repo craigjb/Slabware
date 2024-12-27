@@ -22,7 +22,7 @@ class LcdDim[B <: BusDefinition.Bus](
     val pwmOut = out Bool ()
   }
 
-  val busif = busDef.createBusInterface(io.bus, (0, 4))
+  val busif = busDef.createBusInterface(io.bus, (0, 0x10))
 
   val ctrl = new Area {
     val ctrlReg = busif.newReg(doc = "PWM control").setName("Control")
