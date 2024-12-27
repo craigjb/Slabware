@@ -3,72 +3,63 @@ package slabware
 import spinal.core._
 import spinal.lib._
 import spinal.lib.bus.misc._
+import spinal.lib.bus.regif.AccessType
 
-object LcdDim {
-  def periodReg(
-      counterWidth: BigInt,
-      defaultPeriod: BigInt
-  ) = {
-    RegInit(U(defaultPeriod, counterWidth bits))
-  }
-
-  def dutyReg(
-      counterWidth: BigInt,
-      defaultDuty: Double
-  ) = {
-    val period = BigInt(2).pow(counterWidth.toInt)
-    val duty = (period.toDouble * defaultDuty).toInt
-    RegInit(U(duty, counterWidth bits))
-  }
-
-  def apply(
-      enable: Bool,
-      pwmOut: Bool,
-      busSlaveFactory: Option[BusSlaveFactory] = None,
-      addrOffset: BigInt = 0,
-      counterWidth: BigInt = 8,
-      defaultPeriod: BigInt = BigInt(2).pow(8) - 1,
-      defaultDuty: Double = 0.5
-  ) = {
-    val dimPeriod = LcdDim.periodReg(counterWidth, defaultPeriod)
-    dimPeriod.allowUnsetRegToAvoidLatch
-    val dimDuty = LcdDim.dutyReg(counterWidth, defaultDuty)
-    dimDuty.allowUnsetRegToAvoidLatch
-
-    busSlaveFactory match {
-      case Some(bus) => {
-        bus.readAndWrite(dimPeriod, addrOffset, 0)
-        bus.readAndWrite(dimDuty, addrOffset + 4, 0)
-      }
-      case None => {}
-    }
-
-    val dim = new LcdDim(counterWidth = 8)
-    dim.io.enable := enable
-    pwmOut := dim.io.pwmOut
-    dim.io.period := dimPeriod
-    dim.io.duty := dimDuty
-
-    dim
-  }
-}
-
-class LcdDim(counterWidth: BigInt = 8) extends Component {
+class LcdDim[B <: BusDefinition.Bus](
+    busDef: BusDefinition[B],
+    counterWidth: BigInt = 8,
+    defaultPeriod: BigInt = BigInt(2).pow(8) - 1,
+    defaultDuty: Double = 0.5
+) extends Component {
   assert(counterWidth > 0, "LcdDim counter width must be at least one bit")
   assert(counterWidth <= 32, "LcdDim counter width must be ≤ 32 bits")
 
+  val AddressWidth = 8
+  val DataWidth = 32
+
   val io = new Bundle {
+    val bus = slave(busDef.createBus(AddressWidth, DataWidth))
     val pwmOut = out Bool ()
-    val enable = in Bool ()
-    val period = in UInt (counterWidth bits)
-    val duty = in UInt (counterWidth bits)
+  }
+
+  val busif = busDef.createBusInterface(io.bus, (0, 4))
+
+  val ctrl = new Area {
+    val ctrlReg = busif.newReg(doc = "PWM control").setName("Control")
+    val enable = ctrlReg.field(
+      Bool(),
+      AccessType.RW,
+      resetValue = 0,
+      doc = "PWM output enable"
+    )
+  }
+
+  val period = new Area {
+    val periodReg = busif.newReg(doc = "PWM period").setName("Period")
+    val value = periodReg.field(
+      UInt(counterWidth bits),
+      AccessType.RW,
+      resetValue = defaultPeriod,
+      doc = "PWM period value"
+    )
+  }
+
+  val duty = new Area {
+    val dutyReg = busif.newReg(doc = "PWM duty").setName("Duty")
+    val defaultDutyValue = (defaultPeriod.toDouble * defaultDuty).toInt
+    val value = dutyReg.field(
+      UInt(counterWidth bits),
+      AccessType.RW,
+      resetValue = defaultDutyValue,
+      doc = "PWM duty value"
+    )
   }
 
   val prescaler = RegInit(U(0, 2 bits))
   prescaler := prescaler + 1
 
   val counter = RegInit(U(0, counterWidth bits))
-  when(!io.enable || counter >= io.period) {
+  when(!ctrl.enable || counter >= period.value) {
     counter := 0
   } otherwise {
     when(prescaler === 0) {
@@ -76,5 +67,14 @@ class LcdDim(counterWidth: BigInt = 8) extends Component {
     }
   }
 
-  io.pwmOut := io.enable && (counter <= io.duty)
+  io.pwmOut := ctrl.enable && (counter <= duty.value)
+
+  def svd(name: String, baseAddress: BigInt) = {
+    SvdPeripheral(
+      busif,
+      name,
+      baseAddress,
+      description = "LCD dim control"
+    )
+  }
 }

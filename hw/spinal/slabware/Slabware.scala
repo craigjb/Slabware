@@ -92,18 +92,10 @@ class Slabware(
   )
 
   val spiClockArea = new ClockingArea(spiClockDomain) {
-    val backlightEnable = True
-    val lcdDims = Range(0, numLcdDims)
-      .map(index =>
-        LcdDim(
-          enable = backlightEnable,
-          pwmOut = io.DIM(index)
-        )
-      )
-
     val slabControl = new SlabControl()
     slabControl.io.hdmi <> io.hdmi
     io.LED := slabControl.io.leds
+    io.DIM.setAllTo(slabControl.io.lcdPwmOut)
 
     val grid = SlabGrid(
       videoClkDomain = slabControl.videoClkDomain,

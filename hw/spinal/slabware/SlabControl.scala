@@ -23,6 +23,7 @@ class SlabControl extends Component {
     val hdmi = slave(HdmiIo())
     val ddc = master(I2c())
     val videoOut = master(Flow(HdmiVideo()))
+    val lcdPwmOut = out Bool ()
   }
 
   val sysReset = Bool()
@@ -197,13 +198,16 @@ class SlabControl extends Component {
       )
     hdmiRx.io.hdmi <> io.hdmi
     hdmiRx.io.ddc <> io.ddc
-
     hdmiRx.io.videoOut >> io.videoOut
+
+    val lcdDim = new LcdDim(Apb3Bus)
+    io.lcdPwmOut := lcdDim.io.pwmOut
 
     val ledCtrlOffset = 0x0
     val timerCtrlOffset = 0x400
     val mi2cCtrlOffset = 0x800
     val hdmiRxOffset = 0xc00
+    val lcdDimOffset = 0x1000
 
     val apbDecoder = Apb3Decoder(
       master = apbBridge.io.apb,
@@ -211,7 +215,8 @@ class SlabControl extends Component {
         (ledCtrl.io.bus -> (ledCtrlOffset, 1 kB)),
         (timerCtrl.io.bus -> (timerCtrlOffset, 1 kB)),
         (mi2cCtrl.io.bus -> (mi2cCtrlOffset, 1 kB)),
-        (hdmiRx.io.bus -> (hdmiRxOffset, 1 kB))
+        (hdmiRx.io.bus -> (hdmiRxOffset, 1 kB)),
+        (lcdDim.io.bus -> (lcdDimOffset, 1 kB))
       )
     )
 
@@ -219,6 +224,7 @@ class SlabControl extends Component {
     val timerCtrlBase = apbBase + timerCtrlOffset
     val mi2cCtrlBase = apbBase + mi2cCtrlOffset
     val hdmiRxBase = apbBase + hdmiRxOffset
+    val lcdDimBase = apbBase + lcdDimOffset
 
     val svd = SvdGenerator(
       "slabware",
@@ -226,7 +232,8 @@ class SlabControl extends Component {
         ledCtrl.svd("LEDs", baseAddress = ledCtrlBase),
         timerCtrl.svd("TIMER", baseAddress = timerCtrlBase),
         mi2cCtrl.svd("MI2C", baseAddress = mi2cCtrlBase),
-        hdmiRx.svd("HDMI", baseAddress = hdmiRxBase)
+        hdmiRx.svd("HDMI", baseAddress = hdmiRxBase),
+        lcdDim.svd("LCDDIM", baseAddress = lcdDimBase)
       ),
       description = "Slabware control system"
     )
