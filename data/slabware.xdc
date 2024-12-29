@@ -7,4 +7,4 @@ create_clock -period 10.0 -name SYSCLK [get_ports SYSCLK]
 create_clock -period 6.0 -name HDMICLK [get_ports HDMI_CLK_P]
 
 # videoClk
-create_clock -period 18.0 -name videoClk [get_nets spiClockArea_slabControl_io_videoClk]
+create_clock -period 12.0 -name videoClk [get_nets spiClockArea_slabControl_io_videoClk]

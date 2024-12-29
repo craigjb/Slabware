@@ -8,26 +8,25 @@ import slabware.hdmirx.HdmiVideo
 class GridArbiter(
     val videoClkDomain: ClockDomain,
     spiClusterIndices: Seq[Int],
-    videoInStages: Int = 1,
     displayWidth: Int = 2304,
     displayHeight: Int = 1024,
     hBlankPixels: Int = 2,
-    vBlankLines: Int = 8,
+    vBlankLines: Int = 8
 ) extends Component {
   val io = new Bundle {
     val videoIn = slave(Flow(HdmiVideo()))
     val frameDataOut =
-      Vec.fill(spiClusterIndices.length)(master(Stream(Vec.fill(2)(PixelData()))))
+      Vec.fill(spiClusterIndices.length)(
+        master(Stream(Vec.fill(2)(PixelData())))
+      )
     val frameDataEnable = out Bool ()
   }
+
+  import io.videoIn
 
   val outClkDomain = ClockDomain.current
 
   val videoClkArea = new ClockingArea(videoClkDomain) {
-    val videoIn = (0 until videoInStages).foldLeft(io.videoIn){
-      case (stream, _) => stream.stage()
-    }
-
     val resetFifos = Bool()
     val fifoResetArea = new ResetArea(resetFifos, true) {
       val fifos = spiClusterIndices.map(i => {

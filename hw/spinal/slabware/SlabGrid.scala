@@ -167,6 +167,15 @@ class SlabGrid(
     }
   }
 
+  val videoClkArea = new ClockingArea(videoClkDomain) {
+    val numStages =
+      (numSpiClusters.toDouble / LcdClustersPerArbiter.toDouble).ceil.toInt
+    var videoInStages = Seq(io.videoIn)
+    for (i <- 0 to numStages) {
+      videoInStages = videoInStages :+ videoInStages(i).stage()
+    }
+  }
+
   val gridArbiters = (0 until numSpiClusters).toSeq
     .sliding(LcdClustersPerArbiter, LcdClustersPerArbiter)
     .zipWithIndex
@@ -175,10 +184,9 @@ class SlabGrid(
         new Area {
           val arbiter = new GridArbiter(
             videoClkDomain,
-            clusterIndices,
-            videoInStages = n + 1
+            clusterIndices
           )
-          io.videoIn >> arbiter.io.videoIn
+          videoClkArea.videoInStages(n + 1) >> arbiter.io.videoIn
 
           for (i <- clusterIndices) {
             arbiter.io
