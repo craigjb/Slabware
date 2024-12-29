@@ -49,6 +49,8 @@ bin/
 
 
 simWorkspace/
+data/spinal.xdc
+data/spinal_ooc.xdc
 /xsim.dir
 tmp/
 null

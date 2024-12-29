@@ -1,0 +1,2 @@
+[tasks.bin]
+script = ["cargo objcopy --release -- -O binary target/slabware.bin"]

@@ -7,56 +7,64 @@ import slabware.hdmirx.HdmiVideo
 
 class GridArbiter(
     val videoClkDomain: ClockDomain,
+    spiClusterIndices: Seq[Int],
+    videoInStages: Int = 1,
     displayWidth: Int = 2304,
     displayHeight: Int = 1024,
+    hBlankPixels: Int = 2,
     vBlankLines: Int = 8,
-    numSpiClusters: Int = 36
 ) extends Component {
   val io = new Bundle {
     val videoIn = slave(Flow(HdmiVideo()))
     val frameDataOut =
-      Vec.fill(numSpiClusters)(master(Stream(Vec.fill(2)(PixelData()))))
+      Vec.fill(spiClusterIndices.length)(master(Stream(Vec.fill(2)(PixelData()))))
     val frameDataEnable = out Bool ()
   }
 
   val outClkDomain = ClockDomain.current
 
   val videoClkArea = new ClockingArea(videoClkDomain) {
+    val videoIn = (0 until videoInStages).foldLeft(io.videoIn){
+      case (stream, _) => stream.stage()
+    }
+
     val resetFifos = Bool()
     val fifoResetArea = new ResetArea(resetFifos, true) {
-      val fifos = (0 until numSpiClusters).map(i => {
+      val fifos = spiClusterIndices.map(i => {
         val fifo = StreamFifoCC(
           dataType = Vec.fill(2)(PixelData()),
-          depth = 4 * 1024,
+          depth = 1024,
           pushClock = ClockDomain.current,
           popClock = outClkDomain
         )
-        fifo.io.pop >> io.frameDataOut(i)
-        fifo
+        fifo.io.pop >> io.frameDataOut(i - spiClusterIndices.min)
+        val pushStream = Stream(Vec.fill(2)(PixelData()))
+        pushStream.stage() >> fifo.io.push
+        pushStream
       })
     }
     import fifoResetArea.fifos
 
     val posY = RegInit(
-      U(0, log2Up((displayHeight + vBlankLines) - 1) bits)
+      U(0, log2Up(displayHeight + vBlankLines - 1) bits)
     )
-    val posX = RegInit(U(0, log2Up(displayWidth - 1) bits))
+    val posX = RegInit(U(0, log2Up(displayWidth + hBlankPixels - 1) bits))
 
     val inTopHalf =
       posY >= vBlankLines && posY < vBlankLines + (displayHeight / 2)
     val inBottomHalf = posY >= vBlankLines + (displayHeight / 2)
 
-    when(!io.videoIn.valid || !io.videoIn.vSync) { // negative vsync
+    when(!videoIn.valid || !videoIn.vSync) { // negative vsync
       posY.setAll()
       posX := 0
     }
-    when(!io.videoIn.valid) {
+    when(!videoIn.valid) {
       posX := 0
     }
 
-    import io.videoIn.payload._
+    import videoIn.payload._
 
-    when(io.videoIn.valid && vSync) { // negative vsync polarity
+    when(videoIn.valid && vSync) { // negative vsync polarity
       when(hSync.rise(initAt = False)) {
         posY := posY + 1
       }
@@ -69,38 +77,38 @@ class GridArbiter(
 
     val pixelPosX = Seq(posX, posX + pixelsValid(0).asUInt)
 
-    val fifoPushers = (0 until numSpiClusters).map(i =>
+    val fifoPushers = spiClusterIndices.map(i =>
       new Area {
-        val fifo = fifos(i)
+        val fifoPush = fifos(i - spiClusterIndices.min)
 
         val row = i % 2
         val column = i / 2
-        val leftX = column * LcdCluster.LcdWidth
+        val leftX = hBlankPixels + (column * LcdCluster.LcdWidth)
         val rightX = leftX + LcdCluster.LcdWidth
 
         val pixelInColumn = Vec.fill(2)(Bool())
         for (n <- 0 to 1) {
-          fifo.io.push.payload(n).data := Cat(
-            bluePixels(n)(7 downto 3),
-            greenPixels(n)(7 downto 2),
-            redPixels(n)(7 downto 3)
+          fifoPush.payload(n).data := Cat(
+            bluePixels(n),
+            greenPixels(n),
+            redPixels(n)
           )
 
           pixelInColumn(n) := (pixelPosX(n) >= leftX) && (pixelPosX(n) < rightX)
-          fifo.io.push.payload(n).valid := pixelInColumn(n) && pixelsValid(n)
+          fifoPush.payload(n).valid := pixelInColumn(n) && pixelsValid(n)
         }
         val eitherValid =
-          fifo.io.push.payload(0).valid || fifo.io.push.payload(1).valid
+          fifoPush.payload(0).valid || fifoPush.payload(1).valid
         val inHalf = if (row == 0) {
           inTopHalf
         } else {
           inBottomHalf
         }
-        fifo.io.push.valid := io.videoIn.valid && eitherValid && inHalf && vSync
+        fifoPush.valid := videoIn.valid && eitherValid && inHalf && vSync
       }
     )
 
-    val frameDataEnable = RegNext(io.videoIn.valid && vSync) init (False)
+    val frameDataEnable = RegNext(videoIn.valid && vSync) init (False)
     resetFifos := !frameDataEnable
   }
 

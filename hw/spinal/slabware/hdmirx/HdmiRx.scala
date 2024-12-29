@@ -9,20 +9,24 @@ import spinal.lib.com.i2c.I2c
 
 import slabware.{BusDefinition, SvdPeripheral}
 
-case class HdmiVideo() extends Bundle {
+case class HdmiVideo(redBits: Int = 5, greenBits: Int = 6, blueBits: Int = 5)
+    extends Bundle {
   val vSync = Bool()
   val hSync = Bool()
   val pixelsValid = Vec.fill(2)(Bool())
-  val redPixels = Vec.fill(2)(Bits(8 bits))
-  val greenPixels = Vec.fill(2)(Bits(8 bits))
-  val bluePixels = Vec.fill(2)(Bits(8 bits))
+  val redPixels = Vec.fill(2)(Bits(redBits bits))
+  val greenPixels = Vec.fill(2)(Bits(greenBits bits))
+  val bluePixels = Vec.fill(2)(Bits(blueBits bits))
 }
 
 case class HdmiRxConfig(
     edidBinPath: String,
     simSpeedup: Boolean = false,
     clockDetectorConfig: ClockDetectorConfig = ClockDetectorConfig(),
-    invertChannels: Seq[Boolean] = Seq.fill(3)(false)
+    invertChannels: Seq[Boolean] = Seq.fill(3)(false),
+    redBits: Int = 5,
+    greenBits: Int = 6,
+    blueBits: Int = 5
 )
 
 class HdmiRx[B <: BusDefinition.Bus](
@@ -36,10 +40,11 @@ class HdmiRx[B <: BusDefinition.Bus](
 
   val io = new Bundle {
     val bus = slave(busDef.createBus(AddressWidth, DataWidth))
+    val interrupt = out Bool ()
     val hdmi = slave(HdmiIo())
     val ddc = master(I2c())
-    val usrClk = out Bool ()
-    val videoOut = master(Flow(HdmiVideo()))
+    val videoClk = out Bool ()
+    val videoOut = master(Flow(HdmiVideo(redBits, greenBits, blueBits)))
   }
 
   val busIf = busDef.createBusInterface(io.bus, (0, 0x100))
@@ -84,7 +89,33 @@ class HdmiRx[B <: BusDefinition.Bus](
       statusReg.field(Bool(), AccessType.RO, doc = "Cable detect")
     cableDetect := !io.hdmi.cableDetect
 
+    val cableDetectChanged = statusReg.field(
+      Bool(),
+      AccessType.W1C,
+      resetValue = 0,
+      doc = "Cable detect status changed"
+    )
+    cableDetectChanged.setWhen(cableDetect.rise(initAt = False))
+    cableDetectChanged.setWhen(cableDetect.fall(initAt = False))
+
     val pllLock = statusReg.field(Bool(), AccessType.RO, doc = "PLL is locked")
+
+    val freqChanged = statusReg.field(
+      Bool(),
+      AccessType.W1C,
+      resetValue = 0,
+      doc = "Clock detector frequency changed"
+    )
+
+    val allGtpResetsDone =
+      statusReg.field(
+        Bool(),
+        AccessType.RO,
+        doc = "All channel GTP resets done"
+      )
+
+    val allHdmiDataValid =
+      statusReg.field(Bool(), AccessType.RO, doc = "All channel data is valid")
   }
 
   val hdmiTmdsClk = Bool()
@@ -94,6 +125,55 @@ class HdmiRx[B <: BusDefinition.Bus](
   val clockDetector = ClockDetector(clockDetectorConfig)
   clockDetector.io.hdmiTmdsClk := hdmiTmdsClk
   val clockDetectorBusIf = clockDetector.drive(busIf)
+  status.freqChanged.setWhen(clockDetector.io.freqChanged.rise(initAt = False))
+
+  val interruptCtrl = new Area {
+    val interruptReg =
+      busIf.newReg("Interrupt enables").setName("InterruptEnable")
+    io.interrupt.clear()
+
+    val cableDetectChangedEnable = interruptReg.field(
+      Bool(),
+      AccessType.RW,
+      resetValue = 0,
+      doc = "Enable cable detect changed interrupt"
+    )
+    io.interrupt.setWhen(
+      cableDetectChangedEnable && status.cableDetectChanged
+    )
+
+    val pllLockEnable = interruptReg.field(
+      Bool(),
+      AccessType.RW,
+      resetValue = 0,
+      doc = "Enable PLL lock interrupt"
+    )
+    io.interrupt.setWhen(pllLockEnable && status.pllLock)
+
+    val freqChangedEnable = interruptReg.field(
+      Bool(),
+      AccessType.RW,
+      resetValue = 0,
+      doc = "Enable frequency change interrupt"
+    )
+    io.interrupt.setWhen(freqChangedEnable && status.freqChanged)
+
+    val allGtpResetsDoneEnable = interruptReg.field(
+      Bool(),
+      AccessType.RW,
+      resetValue = 0,
+      doc = "Enable all channel GTP resets done interrupt"
+    )
+    io.interrupt.setWhen(allGtpResetsDoneEnable && status.allGtpResetsDone)
+
+    val allHdmiDataValidEnable = interruptReg.field(
+      Bool(),
+      AccessType.RW,
+      resetValue = 0,
+      doc = "Enable all channel data is valid interrupt"
+    )
+    io.interrupt.setWhen(allHdmiDataValidEnable && status.allHdmiDataValid)
+  }
 
   val edid = new Edid(edidBinPath = edidBinPath)
   io.ddc <> edid.io.ddc
@@ -122,10 +202,12 @@ class HdmiRx[B <: BusDefinition.Bus](
   status.pllLock := BufferCC(gtpCommon.io.pll0.lock, randBoot = true)
 
   val videoClkDomain = ClockDomain(
-    clock = io.usrClk,
+    clock = io.videoClk,
     reset = control.gtpReset
   )
 
+  status.allGtpResetsDone.set()
+  status.allHdmiDataValid.set()
   val channels = (0 to 2).map(i =>
     new Area {
       val channelStatus =
@@ -160,13 +242,14 @@ class HdmiRx[B <: BusDefinition.Bus](
       )
 
       if (i == 0) {
-        io.usrClk := BUFG.on(hdmiChannel.io.rxOutClk)
+        io.videoClk := BUFG.on(hdmiChannel.io.rxOutClk)
       }
 
       hdmiChannel.io.clocking.fromGtpe2Common(gtpCommon)
       hdmiChannel.io.pair <> io.hdmi.channels(i)
       hdmiChannel.io.reset := control.gtpReset
       channelStatus.gtpResetDone := hdmiChannel.io.resetDone
+      status.allGtpResetsDone.clearWhen(!hdmiChannel.io.resetDone)
       channelStatus.hdmiDataOut0Valid := BufferCC(
         hdmiChannel.io.hdmiOut(0).valid,
         randBoot = true
@@ -175,10 +258,13 @@ class HdmiRx[B <: BusDefinition.Bus](
         hdmiChannel.io.hdmiOut(1).valid,
         randBoot = true
       )
+      status.allHdmiDataValid.clearWhen(
+        !channelStatus.hdmiDataOut0Valid || !channelStatus.hdmiDataOut1Valid
+      )
     }
   )
 
-  val usrClkArea = new ClockingArea(videoClkDomain) {
+  val videoClkArea = new ClockingArea(videoClkDomain) {
     val videoOutFlow = Flow(HdmiVideo())
     val hSync = RegInit(False)
     videoOutFlow.hSync := hSync
@@ -224,18 +310,18 @@ class HdmiRx[B <: BusDefinition.Bus](
 
     // red is HDMI channel 2
     val redPixelsOut = videoOutFlow.payload.redPixels
-    redPixelsOut(0) := chanOuts(2)(0).data
-    redPixelsOut(1) := chanOuts(2)(1).data
+    redPixelsOut(0) := chanOuts(2)(0).data(7 downto (8 - redBits))
+    redPixelsOut(1) := chanOuts(2)(1).data(7 downto (8 - redBits))
 
     // green is HDMI channel 1
     val greenPixelsOut = videoOutFlow.payload.greenPixels
-    greenPixelsOut(0) := chanOuts(1)(0).data
-    greenPixelsOut(1) := chanOuts(1)(1).data
+    greenPixelsOut(0) := chanOuts(1)(0).data(7 downto (8 - greenBits))
+    greenPixelsOut(1) := chanOuts(1)(1).data(7 downto (8 - greenBits))
 
     // blue is HDMI channel 1
     val bluePixelsOut = videoOutFlow.payload.bluePixels
-    bluePixelsOut(0) := chanOuts(0)(0).data
-    bluePixelsOut(1) := chanOuts(0)(1).data
+    bluePixelsOut(0) := chanOuts(0)(0).data(7 downto (8 - blueBits))
+    bluePixelsOut(1) := chanOuts(0)(1).data(7 downto (8 - blueBits))
 
     io.videoOut := videoOutFlow.stage()
   }

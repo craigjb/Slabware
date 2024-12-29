@@ -7,6 +7,7 @@ pub struct RegisterBlock {
     clk_det_sample_rate: ClkDetSampleRate,
     clk_det_count: ClkDetCount,
     clk_det_tolerance: ClkDetTolerance,
+    interrupt_enable: InterruptEnable,
     channel0: Channel0,
     channel1: Channel1,
     channel2: Channel2,
@@ -42,17 +43,22 @@ impl RegisterBlock {
     pub const fn clk_det_tolerance(&self) -> &ClkDetTolerance {
         &self.clk_det_tolerance
     }
-    #[doc = "0x18 - Channel 0 status"]
+    #[doc = "0x18 - Interrupt enables"]
+    #[inline(always)]
+    pub const fn interrupt_enable(&self) -> &InterruptEnable {
+        &self.interrupt_enable
+    }
+    #[doc = "0x1c - Channel 0 status"]
     #[inline(always)]
     pub const fn channel0(&self) -> &Channel0 {
         &self.channel0
     }
-    #[doc = "0x1c - Channel 1 status"]
+    #[doc = "0x20 - Channel 1 status"]
     #[inline(always)]
     pub const fn channel1(&self) -> &Channel1 {
         &self.channel1
     }
-    #[doc = "0x20 - Channel 2 status"]
+    #[doc = "0x24 - Channel 2 status"]
     #[inline(always)]
     pub const fn channel2(&self) -> &Channel2 {
         &self.channel2
@@ -64,7 +70,7 @@ module"]
 pub type Control = crate::Reg<control::ControlSpec>;
 #[doc = "Control"]
 pub mod control;
-#[doc = "status (r) register accessor: Status\n\nYou can [`read`](crate::Reg::read) this register and get [`status::R`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@status`]
+#[doc = "status (rw) register accessor: Status\n\nYou can [`read`](crate::Reg::read) this register and get [`status::R`]. You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`status::W`]. You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@status`]
 module"]
 #[doc(alias = "status")]
 pub type Status = crate::Reg<status::StatusSpec>;
@@ -94,6 +100,11 @@ module"]
 pub type ClkDetTolerance = crate::Reg<clk_det_tolerance::ClkDetToleranceSpec>;
 #[doc = "Clock detector tolerance"]
 pub mod clk_det_tolerance;
+#[doc = "InterruptEnable (rw) register accessor: Interrupt enables\n\nYou can [`read`](crate::Reg::read) this register and get [`interrupt_enable::R`]. You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`interrupt_enable::W`]. You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@interrupt_enable`]
+module"]
+pub type InterruptEnable = crate::Reg<interrupt_enable::InterruptEnableSpec>;
+#[doc = "Interrupt enables"]
+pub mod interrupt_enable;
 #[doc = "channel0 (r) register accessor: Channel 0 status\n\nYou can [`read`](crate::Reg::read) this register and get [`channel0::R`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@channel0`]
 module"]
 #[doc(alias = "channel0")]

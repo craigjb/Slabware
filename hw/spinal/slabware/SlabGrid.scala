@@ -18,6 +18,8 @@ object SlabGrid {
   val DisplayWidth = LcdCluster.LcdWidth * 18
   val DisplayHeight = LcdCluster.LcdWidth * 8
 
+  val LcdClustersPerArbiter = 9
+
   sealed abstract class LcdStep {}
   object LcdStep {
     final case class Wait(rst: Boolean = true) extends LcdStep
@@ -165,10 +167,28 @@ class SlabGrid(
     }
   }
 
-  val gridArbiter = new GridArbiter(videoClkDomain)
-  io.videoIn >> gridArbiter.io.videoIn
-  for (i <- 0 until numSpiClusters) {
-    gridArbiter.io.frameDataOut(i) >> lcdClusters(i).io.frameDataStream
-    lcdClusters(i).io.frameEnable := gridArbiter.io.frameDataEnable && startupDone
-  }
+  val gridArbiters = (0 until numSpiClusters).toSeq
+    .sliding(LcdClustersPerArbiter, LcdClustersPerArbiter)
+    .zipWithIndex
+    .map {
+      case (clusterIndices, n) => {
+        new Area {
+          val arbiter = new GridArbiter(
+            videoClkDomain,
+            clusterIndices,
+            videoInStages = n + 1
+          )
+          io.videoIn >> arbiter.io.videoIn
+
+          for (i <- clusterIndices) {
+            arbiter.io
+              .frameDataOut(i - clusterIndices.min)
+              .stage() >> lcdClusters(i).io.frameDataStream
+            val frameEnable = arbiter.io.frameDataEnable && startupDone
+            lcdClusters(i).io.frameEnable := frameEnable
+          }
+        }
+      }
+    }
+    .toSeq
 }

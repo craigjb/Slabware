@@ -20,7 +20,10 @@ object GridArbiterSim extends App {
     )
     .withWave
     .compile(
-      new GridArbiter(videoClkDomain = ClockDomain.external("videoClk"))
+      new GridArbiter(
+        videoClkDomain = ClockDomain.external("videoClk"),
+        (0 until 36).toSeq
+      )
     )
     .doSim { dut =>
       dut.clockDomain.forkStimulus()

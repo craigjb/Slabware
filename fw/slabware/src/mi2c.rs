@@ -209,16 +209,5 @@ pub fn handle_mi2c_interrupt() {
     Mi2c::waker().wake();
 
     let regs = unsafe { Mi2c::steal() };
-    critical_section::with(|_| {
-        regs.interrupt().modify(|_, w| {
-            w.start_enable()
-                .clear_bit()
-                .restart_enable()
-                .clear_bit()
-                .end_enable()
-                .clear_bit()
-                .tx_ack_enable()
-                .clear_bit()
-        });
-    })
+    critical_section::with(|_| unsafe { regs.interrupt().write_with_zero(|w| w) })
 }

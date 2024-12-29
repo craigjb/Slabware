@@ -1,5 +1,6 @@
 package slabware
 
+import java.nio.file.{Files, Paths}
 import scala.collection.mutable.ArrayBuffer
 
 import spinal.core._
@@ -16,7 +17,9 @@ import vexriscv.plugin._
 
 import slabware.hdmirx.{HdmiRx, HdmiRxConfig, HdmiIo, HdmiVideo}
 
-class SlabControl extends Component {
+class SlabControl(
+    firmwareBinPath: String = null
+) extends Component {
   val io = new Bundle {
     val leds = out(Bits(8 bits))
     val hdmiCtrlI2c = master(I2c())
@@ -24,6 +27,7 @@ class SlabControl extends Component {
     val ddc = master(I2c())
     val videoOut = master(Flow(HdmiVideo()))
     val lcdPwmOut = out Bool ()
+    val gridEnable = out Bool ()
   }
 
   val sysReset = Bool()
@@ -111,10 +115,16 @@ class SlabControl extends Component {
   )
 
   val mi2cInterruptPlugin = new UserInterruptPlugin(
-    interruptName = "mi2c",
+    interruptName = "mi2cInt",
     code = 20
   )
   cpuPlugins += mi2cInterruptPlugin
+
+  val hdmiRxInterruptPlugin = new UserInterruptPlugin(
+    interruptName = "hdmiRxInt",
+    code = 21
+  )
+  cpuPlugins += hdmiRxInterruptPlugin
 
   val cpuConfig = VexRiscvConfig(
     plugins = cpuPlugins
@@ -152,6 +162,34 @@ class SlabControl extends Component {
       byteCount = 16 kB,
       idWidth = 4
     )
+
+    if (firmwareBinPath != null) {
+      val romContents = Files
+        .readAllBytes(Paths.get(firmwareBinPath))
+        .grouped(4)
+        .map(w =>
+          new BigInt(
+            new java.math.BigInteger(
+              Array(
+                0.toByte,
+                0.toByte,
+                0.toByte,
+                0.toByte,
+                w(3),
+                w(2),
+                w(1),
+                w(0)
+              )
+            )
+          )
+        )
+      ram.ram.init(
+        romContents
+          .map(word => B(word, 32 bits))
+          .toSeq
+          .padTo(ram.wordCount.toInt, B(0, 32 bits))
+      )
+    }
 
     val apbBridge = Axi4SharedToApb3Bridge(
       addressWidth = 16,
@@ -199,15 +237,20 @@ class SlabControl extends Component {
     hdmiRx.io.hdmi <> io.hdmi
     hdmiRx.io.ddc <> io.ddc
     hdmiRx.io.videoOut >> io.videoOut
+    hdmiRxInterruptPlugin.interrupt := hdmiRx.io.interrupt
 
     val lcdDim = new LcdDim(Apb3Bus)
     io.lcdPwmOut := lcdDim.io.pwmOut
+
+    val gridCtrl = new SlabGridCtrl(Apb3Bus)
+    io.gridEnable := gridCtrl.io.gridEnable
 
     val ledCtrlOffset = 0x0
     val timerCtrlOffset = 0x400
     val mi2cCtrlOffset = 0x800
     val hdmiRxOffset = 0xc00
     val lcdDimOffset = 0x1000
+    val gridCtrlOffset = 0x1400
 
     val apbDecoder = Apb3Decoder(
       master = apbBridge.io.apb,
@@ -216,7 +259,8 @@ class SlabControl extends Component {
         (timerCtrl.io.bus -> (timerCtrlOffset, 1 kB)),
         (mi2cCtrl.io.bus -> (mi2cCtrlOffset, 1 kB)),
         (hdmiRx.io.bus -> (hdmiRxOffset, 1 kB)),
-        (lcdDim.io.bus -> (lcdDimOffset, 1 kB))
+        (lcdDim.io.bus -> (lcdDimOffset, 1 kB)),
+        (gridCtrl.io.bus -> (gridCtrlOffset, 1 kB))
       )
     )
 
@@ -225,15 +269,17 @@ class SlabControl extends Component {
     val mi2cCtrlBase = apbBase + mi2cCtrlOffset
     val hdmiRxBase = apbBase + hdmiRxOffset
     val lcdDimBase = apbBase + lcdDimOffset
+    val gridCtrlBase = apbBase + gridCtrlOffset
 
     val svd = SvdGenerator(
       "slabware",
       peripherals = Seq(
-        ledCtrl.svd("LEDs", baseAddress = ledCtrlBase),
-        timerCtrl.svd("TIMER", baseAddress = timerCtrlBase),
-        mi2cCtrl.svd("MI2C", baseAddress = mi2cCtrlBase),
-        hdmiRx.svd("HDMI", baseAddress = hdmiRxBase),
-        lcdDim.svd("LCDDIM", baseAddress = lcdDimBase)
+        ledCtrl.svd("Leds", baseAddress = ledCtrlBase),
+        timerCtrl.svd("Timer", baseAddress = timerCtrlBase),
+        mi2cCtrl.svd("Mi2c", baseAddress = mi2cCtrlBase),
+        hdmiRx.svd("HdmiRX", baseAddress = hdmiRxBase),
+        lcdDim.svd("LcdDim", baseAddress = lcdDimBase),
+        gridCtrl.svd("GridCtrl", baseAddress = gridCtrlBase)
       ),
       description = "Slabware control system"
     )

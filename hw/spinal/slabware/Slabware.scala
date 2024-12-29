@@ -5,10 +5,12 @@ import spinal.lib._
 import spinal.lib.bus.amba4.axi._
 import spinal.lib.io._
 import spinal.lib.blackbox.xilinx.s7.IOBUF
+import spinal.lib.eda.xilinx.VivadoConstraintWriter
 
 import slabware.hdmirx.{HdmiIo, DiffPair}
 
 class Slabware(
+    firmwareBinPath: String = null,
     numLcdDims: Int = 9,
     numSpiClusters: Int = 36
 ) extends Component {
@@ -92,25 +94,29 @@ class Slabware(
   )
 
   val spiClockArea = new ClockingArea(spiClockDomain) {
-    val slabControl = new SlabControl()
+    val slabControl = new SlabControl(
+      firmwareBinPath = firmwareBinPath
+    )
     slabControl.io.hdmi <> io.hdmi
     io.LED := slabControl.io.leds
     io.DIM.setAllTo(slabControl.io.lcdPwmOut)
 
-    val grid = SlabGrid(
-      videoClkDomain = slabControl.videoClkDomain,
-      numSpiClusters = numSpiClusters,
-      lcdReset = io.RESET,
-      scl = io.SCL,
-      sda = io.SDA,
-      dc = io.DC,
-      dsa = io.DSA,
-      dsb = io.DSB
-    )
-    slabControl.io.videoOut >> grid.io.videoIn
+    val gridResetArea = new ResetArea(!slabControl.io.gridEnable, true) {
+      val grid = SlabGrid(
+        videoClkDomain = slabControl.videoClkDomain,
+        numSpiClusters = numSpiClusters,
+        lcdReset = io.RESET,
+        scl = io.SCL,
+        sda = io.SDA,
+        dc = io.DC,
+        dsa = io.DSA,
+        dsb = io.DSB
+      )
+    }
+    slabControl.io.videoOut >> gridResetArea.grid.io.videoIn
 
-    io.DBG_UART_TX := slabControl.sysClkArea.hdmiRx.io.videoOut.hSync.pull()
-    io.DBG_UART_RX := slabControl.sysClkArea.hdmiRx.io.videoOut.vSync.pull()
+    io.DBG_UART_TX := gridResetArea.grid.io.videoIn.valid.pull()
+    io.DBG_UART_RX := gridResetArea.grid.io.videoIn.vSync.pull()
   }
 
   val hdmiCtlI2cIo = new Area {
@@ -134,13 +140,14 @@ class Slabware(
 
 object TopLevelVerilog {
   def main(args: Array[String]): Unit = {
-    SpinalConfig(
+    val spinalReport = SpinalConfig(
       inlineRom = true
     ).generateVerilog(
       new Slabware(
-        numLcdDims = 9,
-        numSpiClusters = 36
+        firmwareBinPath = "fw/slabware/target/slabware.bin"
       )
     )
+
+    VivadoConstraintWriter(spinalReport, "data/spinal.xdc")
   }
 }
