@@ -1,6 +1,5 @@
 package slabware
 
-import java.nio.file.{Files, Paths}
 import scala.collection.mutable.ArrayBuffer
 
 import spinal.core._
@@ -16,6 +15,7 @@ import vexriscv._
 import vexriscv.plugin._
 
 import slabware.hdmirx.{HdmiRx, HdmiRxConfig, HdmiIo, HdmiVideo}
+import slabware.Utils._
 
 class SlabControl(
     firmwareBinPath: String = null
@@ -164,31 +164,7 @@ class SlabControl(
     )
 
     if (firmwareBinPath != null) {
-      val romContents = Files
-        .readAllBytes(Paths.get(firmwareBinPath))
-        .grouped(4)
-        .map(w =>
-          new BigInt(
-            new java.math.BigInteger(
-              Array(
-                0.toByte,
-                0.toByte,
-                0.toByte,
-                0.toByte,
-                w(3),
-                w(2),
-                w(1),
-                w(0)
-              )
-            )
-          )
-        )
-      ram.ram.init(
-        romContents
-          .map(word => B(word, 32 bits))
-          .toSeq
-          .padTo(ram.wordCount.toInt, B(0, 32 bits))
-      )
+      ram.ram.init(read32BitMemFromFile(firmwareBinPath, ram.wordCount.toInt))
     }
 
     val apbBridge = Axi4SharedToApb3Bridge(
