@@ -2,9 +2,7 @@
 #![no_main]
 
 mod custom_int;
-mod i2c;
 mod mi2c;
-mod sealed_instance;
 mod time_driver;
 mod video;
 

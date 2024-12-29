@@ -2,14 +2,29 @@ use core::future::poll_fn;
 use core::task::Poll;
 
 use crate::custom_int::*;
-use crate::i2c::AckKind;
-use crate::sealed_instance::SealedInstance;
 use embassy_sync::waitqueue::AtomicWaker;
 pub use embedded_hal_async::i2c::I2c;
 use embedded_hal_async::i2c::{ErrorKind, ErrorType, Operation, SevenBitAddress};
 use slab_pac::Mi2c;
 
 pub const MI2C_INTERRUPT_CODE: usize = 20;
+
+static MI2C_WAKER: AtomicWaker = AtomicWaker::new();
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum AckKind {
+    Ack,
+    Nack,
+}
+
+impl AckKind {
+    pub fn value(&self) -> bool {
+        match self {
+            Self::Ack => false,
+            Self::Nack => true,
+        }
+    }
+}
 
 pub struct I2cMaster {
     regs: Mi2c,
@@ -35,7 +50,7 @@ impl I2cMaster {
 
         Self {
             regs: i2c,
-            waker: Mi2c::waker(),
+            waker: &MI2C_WAKER,
         }
     }
 
@@ -198,15 +213,8 @@ impl Drop for I2cMaster {
     }
 }
 
-impl SealedInstance for Mi2c {
-    fn waker() -> &'static AtomicWaker {
-        static MI2C_WAKER: AtomicWaker = AtomicWaker::new();
-        &MI2C_WAKER
-    }
-}
-
 pub fn handle_mi2c_interrupt() {
-    Mi2c::waker().wake();
+    MI2C_WAKER.wake();
 
     let regs = unsafe { Mi2c::steal() };
     critical_section::with(|_| unsafe { regs.interrupt().write_with_zero(|w| w) })

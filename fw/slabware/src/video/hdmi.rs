@@ -2,15 +2,15 @@ use core::future::{poll_fn, Future};
 use core::task::Poll;
 
 use crate::custom_int::*;
-use crate::sealed_instance::SealedInstance;
 use embassy_futures::select::{select, Either};
 use embassy_sync::waitqueue::AtomicWaker;
 use embassy_time::{Duration, Timer};
 use slab_pac::HdmiRx;
 
 pub const HDMI_RX_INTERRUPT_CODE: usize = 21;
-
 pub const CLOCK_DETECT_MILLIS: usize = 5_000;
+
+static HDMI_RX_WAKER: AtomicWaker = AtomicWaker::new();
 
 pub enum HdmiError {
     Timeout,
@@ -50,7 +50,7 @@ impl Hdmi {
 
         Self {
             regs: hdmi,
-            waker: HdmiRx::waker(),
+            waker: &HDMI_RX_WAKER,
             clock_det_divisor,
             clock_det_sample_rate,
         }
@@ -236,14 +236,8 @@ impl Drop for Hdmi {
     }
 }
 
-impl SealedInstance for HdmiRx {
-    fn waker() -> &'static AtomicWaker {
-        static HDMI_RX_WAKER: AtomicWaker = AtomicWaker::new();
-        &HDMI_RX_WAKER
-    }
-}
 pub fn handle_hdmi_interrupt() {
-    HdmiRx::waker().wake();
+    HDMI_RX_WAKER.wake();
 
     let regs = unsafe { HdmiRx::steal() };
     critical_section::with(|_| unsafe { regs.interrupt_enable().write_with_zero(|w| w) })
