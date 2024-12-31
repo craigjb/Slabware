@@ -1,2 +1,5 @@
+[tasks.svd]
+script = ["cd ../slab-pac; cargo make svd"]
+
 [tasks.bin]
 script = ["cargo objcopy --release -- -O binary target/slabware.bin"]

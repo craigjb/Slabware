@@ -22,7 +22,9 @@ import slabware.hdmirx.{HdmiRx, HdmiRxConfig, HdmiIo, HdmiVideo}
 import slabware.Utils._
 
 class SlabControl(
-    firmwareBinPath: String = null
+    firmwareBinPath: String = null,
+    numGridRows: Int = 8,
+    numGridCols: Int = 18
 ) extends Component {
   val io = new Bundle {
     val leds = out(Bits(8 bits))
@@ -32,6 +34,8 @@ class SlabControl(
     val videoOut = master(Flow(HdmiVideo()))
     val lcdPwmOut = out Bool ()
     val gridEnable = out Bool ()
+    val btnRow = out Bits (numGridRows bits)
+    val btnCol = in Bits (numGridCols bits)
     val usbPhy = master(SpinalUsbCtrl.PhyIo())
   }
 
@@ -231,6 +235,8 @@ class SlabControl(
 
     val gridCtrl = new SlabGridCtrl(Apb3Bus)
     io.gridEnable := gridCtrl.io.gridEnable
+    io.btnRow := gridCtrl.io.btnRow
+    gridCtrl.io.btnCol := io.btnCol
 
     val usbCtrl =
       new UsbDeviceCtrl(Apb3Bus, UsbDeviceCtrlParameter(addressWidth = 14))

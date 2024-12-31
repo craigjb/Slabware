@@ -35,8 +35,8 @@ class Slabware(
     val DSB = out Bits (numSpiClusters bits)
 
     // Button matrix
-    // val BTNCOL = out Bits (18 bits)
-    // val BTNROW = in Bits (8 bits)
+    val BTNROW = out Bits (8 bits)
+    val BTNCOL = in Bits (18 bits)
 
     // TMDS181 I2c
     val HDMI_CTL_SDA = inout(Analog(Bool))
@@ -117,6 +117,8 @@ class Slabware(
       firmwareBinPath = firmwareBinPath
     )
     slabControl.io.hdmi <> io.hdmi
+    slabControl.io.btnCol := io.BTNCOL
+    io.BTNROW := slabControl.io.btnRow
     io.LED := slabControl.io.leds
     io.DIM.setAllTo(slabControl.io.lcdPwmOut)
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Generated from SpinalHDL. Don't edit. -->
-<!-- Date generated: Sun Dec 29 13:42:24 MST 2024 -->
+<!-- Date generated: Tue Dec 31 15:07:57 MST 2024 -->
 <device schemaVersion="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
   xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_0.xsd">
   <name>slabware</name>
@@ -1178,6 +1178,543 @@
             <description>SlabGrid enable</description>
             <bitRange>[0:0]</bitRange>
             <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>ScanRate</name>
+        <description>Grid key scan rate</description>
+        <addressOffset>0x4</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0x1f</resetMask>
+        <fields>
+          <field>
+            <name>rate</name>
+            <description>Key scan rate (25 Hz)</description>
+            <bitRange>[4:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col0KeyState</name>
+        <description>Column 0 key state</description>
+        <addressOffset>0x8</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 0 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col1KeyState</name>
+        <description>Column 1 key state</description>
+        <addressOffset>0xc</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 1 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col2KeyState</name>
+        <description>Column 2 key state</description>
+        <addressOffset>0x10</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 2 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col3KeyState</name>
+        <description>Column 3 key state</description>
+        <addressOffset>0x14</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 3 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col4KeyState</name>
+        <description>Column 4 key state</description>
+        <addressOffset>0x18</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 4 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col5KeyState</name>
+        <description>Column 5 key state</description>
+        <addressOffset>0x1c</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 5 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col6KeyState</name>
+        <description>Column 6 key state</description>
+        <addressOffset>0x20</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 6 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col7KeyState</name>
+        <description>Column 7 key state</description>
+        <addressOffset>0x24</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 7 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col8KeyState</name>
+        <description>Column 8 key state</description>
+        <addressOffset>0x28</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 8 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col9KeyState</name>
+        <description>Column 9 key state</description>
+        <addressOffset>0x2c</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 9 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col10KeyState</name>
+        <description>Column 10 key state</description>
+        <addressOffset>0x30</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 10 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col11KeyState</name>
+        <description>Column 11 key state</description>
+        <addressOffset>0x34</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 11 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col12KeyState</name>
+        <description>Column 12 key state</description>
+        <addressOffset>0x38</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 12 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col13KeyState</name>
+        <description>Column 13 key state</description>
+        <addressOffset>0x3c</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 13 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col14KeyState</name>
+        <description>Column 14 key state</description>
+        <addressOffset>0x40</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 14 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col15KeyState</name>
+        <description>Column 15 key state</description>
+        <addressOffset>0x44</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 15 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col16KeyState</name>
+        <description>Column 16 key state</description>
+        <addressOffset>0x48</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 16 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Col17KeyState</name>
+        <description>Column 17 key state</description>
+        <addressOffset>0x4c</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xff</resetMask>
+        <fields>
+          <field>
+            <name>state</name>
+            <description>Colum 17 key state (row 0 is bit 0)</description>
+            <bitRange>[7:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+    </registers>
+  </peripheral>
+  <peripheral>
+    <name>UsbCtrl</name>
+    <description>USB device controller</description>
+    <baseAddress>0x10010000</baseAddress>
+    <registers>
+      <register>
+        <name>Frame</name>
+        <description>USB frame id</description>
+        <addressOffset>0xff00</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0x7ff</resetMask>
+        <fields>
+          <field>
+            <name>usbFrameId</name>
+            <description>Current USB frame ID</description>
+            <bitRange>[10:0]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Address</name>
+        <description>USB address</description>
+        <addressOffset>0xff04</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0x1ff</resetMask>
+        <fields>
+          <field>
+            <name>value</name>
+            <description>The device will only listen at tokens with the specified address. This field is automatically cleared on usb reset events</description>
+            <bitRange>[6:0]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>enable</name>
+            <description>Enable the USB address filtering if set</description>
+            <bitRange>[7:7]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>trigger</name>
+            <description>Set the enable (see above) on the next EP0 IN token completion Cleared by the hardware after any EP0 completion</description>
+            <bitRange>[8:8]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Interrupt</name>
+        <description>Interrupt status</description>
+        <addressOffset>0xff08</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0x1fffff</resetMask>
+        <fields>
+          <field>
+            <name>endpoints</name>
+            <description>Raised when an endpoint generates an interrupt</description>
+            <bitRange>[15:0]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>reset</name>
+            <description>Raised when a USB reset occurs</description>
+            <bitRange>[16:16]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>ep0Setup</name>
+            <description>Raised when endpoint 0 receives a setup transaction</description>
+            <bitRange>[17:17]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>suspend</name>
+            <description>Raised when a USB suspend occurs</description>
+            <bitRange>[18:18]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>resume</name>
+            <description>Raised when a USB resume occurs</description>
+            <bitRange>[19:19]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>disconnect</name>
+            <description>Raised when a USB disconnect occurs</description>
+            <bitRange>[20:20]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Halt</name>
+        <description>Halt endpoint</description>
+        <addressOffset>0xff0c</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0x3f</resetMask>
+        <fields>
+          <field>
+            <name>endpointId</name>
+            <description>The endpoint you want to put in sleep</description>
+            <bitRange>[3:0]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>enable</name>
+            <description>Halt is active when set, endpoint is unhalted when cleared.</description>
+            <bitRange>[4:4]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>effective</name>
+            <description>After setting the enable, wait for this bit to be set by the hardware to ensure atomicity</description>
+            <bitRange>[5:5]</bitRange>
+            <access>read-only</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>Config</name>
+        <description>Configuration</description>
+        <addressOffset>0xff10</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0x3</resetMask>
+        <fields>
+          <field>
+            <name>pullUpEnable</name>
+            <description>Enable USB device pullup on dp pin</description>
+            <bitRange>[0:0]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>interruptEnable</name>
+            <description>Enable interrupts</description>
+            <bitRange>[1:1]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>infoReg</name>
+        <description>Info</description>
+        <addressOffset>0xff20</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0xf</resetMask>
+        <fields>
+          <field>
+            <name>ramSize</name>
+            <description>Internal ram address width (bits)</description>
+            <bitRange>[3:0]</bitRange>
+            <access>read-only</access>
             <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
           </field>
