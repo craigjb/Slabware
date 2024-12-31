@@ -6,10 +6,12 @@ import spinal.lib._
 class ClockGen(
     multiplier: Double,
     divider: Int,
-    clkOutDivider: Int
+    clkOutDivider0: Int,
+    clkOutDivider1: Int
 ) extends Component {
   val io = new Bundle {
-    val clkOut = out Bool ()
+    val clkOut0 = out Bool ()
+    val clkOut1 = out Bool ()
     val locked = out Bool ()
   }
 
@@ -17,13 +19,15 @@ class ClockGen(
   val clkInPeriodNs = clkInFreq.toTime.toBigDecimal / 1e-9
 
   val vcoFreq = clkInFreq * multiplier
-  val clkOutFreq = FixedFrequency(vcoFreq / divider / clkOutDivider)
+  val clkOut0Freq = FixedFrequency(vcoFreq / divider / clkOutDivider0)
+  val clkOut1Freq = FixedFrequency(vcoFreq / divider / clkOutDivider1)
 
   val mmcm = new MmcmE2Base(
     clkInPeriodNs = clkInPeriodNs,
     clkFbOutMultiplier = multiplier,
     divClkDivider = divider,
-    clkOut0Divide = clkOutDivider
+    clkOut0Divide = clkOutDivider0,
+    clkOut1Divide = clkOutDivider1
   )
 
   mmcm.io.clkIn := ClockDomain.current.readClockWire
@@ -31,7 +35,8 @@ class ClockGen(
   mmcm.io.clkFbIn := mmcm.io.clkFbOut
   mmcm.io.powerDown := False
 
-  io.clkOut := mmcm.io.clkOut0
+  io.clkOut0 := mmcm.io.clkOut0
+  io.clkOut1 := mmcm.io.clkOut1
   io.locked := mmcm.io.locked
 
   class MmcmE2Base(

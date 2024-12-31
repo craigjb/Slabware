@@ -10,6 +10,10 @@ import spinal.lib.com.uart._
 import spinal.lib.com.i2c._
 import spinal.lib.cpu.riscv.debug.DebugTransportModuleParameter
 import spinal.lib.blackbox.xilinx.s7.BSCANE2
+import spinal.lib.com.usb.udc.{
+  UsbDeviceCtrlParameter,
+  UsbDeviceCtrl => SpinalUsbCtrl
+}
 
 import vexriscv._
 import vexriscv.plugin._
@@ -28,6 +32,7 @@ class SlabControl(
     val videoOut = master(Flow(HdmiVideo()))
     val lcdPwmOut = out Bool ()
     val gridEnable = out Bool ()
+    val usbPhy = master(SpinalUsbCtrl.PhyIo())
   }
 
   val sysReset = Bool()
@@ -126,6 +131,12 @@ class SlabControl(
   )
   cpuPlugins += hdmiRxInterruptPlugin
 
+  val usbInterruptPlugin = new UserInterruptPlugin(
+    interruptName = "usbInt",
+    code = 22
+  )
+  cpuPlugins += usbInterruptPlugin
+
   val cpuConfig = VexRiscvConfig(
     plugins = cpuPlugins
   )
@@ -168,7 +179,7 @@ class SlabControl(
     }
 
     val apbBridge = Axi4SharedToApb3Bridge(
-      addressWidth = 16,
+      addressWidth = 17,
       dataWidth = 32,
       idWidth = 4
     )
@@ -177,7 +188,7 @@ class SlabControl(
     val apbBase = 0x10000000L
     axiCrossbar.addSlaves(
       ram.io.axi -> (0x00000000L, ram.byteCount),
-      apbBridge.io.axi -> (apbBase, 8 kB)
+      apbBridge.io.axi -> (apbBase, 128 kB)
     )
     axiCrossbar.addConnections(
       iBus -> List(ram.io.axi),
@@ -221,12 +232,18 @@ class SlabControl(
     val gridCtrl = new SlabGridCtrl(Apb3Bus)
     io.gridEnable := gridCtrl.io.gridEnable
 
+    val usbCtrl =
+      new UsbDeviceCtrl(Apb3Bus, UsbDeviceCtrlParameter(addressWidth = 14))
+    usbInterruptPlugin.interrupt := usbCtrl.io.interrupt
+    io.usbPhy <> usbCtrl.io.phy
+
     val ledCtrlOffset = 0x0
     val timerCtrlOffset = 0x400
     val mi2cCtrlOffset = 0x800
     val hdmiRxOffset = 0xc00
     val lcdDimOffset = 0x1000
     val gridCtrlOffset = 0x1400
+    val usbCtrlOffset = 0x10000
 
     val apbDecoder = Apb3Decoder(
       master = apbBridge.io.apb,
@@ -236,7 +253,8 @@ class SlabControl(
         (mi2cCtrl.io.bus -> (mi2cCtrlOffset, 1 kB)),
         (hdmiRx.io.bus -> (hdmiRxOffset, 1 kB)),
         (lcdDim.io.bus -> (lcdDimOffset, 1 kB)),
-        (gridCtrl.io.bus -> (gridCtrlOffset, 1 kB))
+        (gridCtrl.io.bus -> (gridCtrlOffset, 1 kB)),
+        (usbCtrl.io.bus -> (usbCtrlOffset, 64 kB))
       )
     )
 
@@ -246,6 +264,7 @@ class SlabControl(
     val hdmiRxBase = apbBase + hdmiRxOffset
     val lcdDimBase = apbBase + lcdDimOffset
     val gridCtrlBase = apbBase + gridCtrlOffset
+    val usbCtrlBase = apbBase + usbCtrlOffset
 
     val svd = SvdGenerator(
       "slabware",
@@ -255,7 +274,8 @@ class SlabControl(
         mi2cCtrl.svd("Mi2c", baseAddress = mi2cCtrlBase),
         hdmiRx.svd("HdmiRX", baseAddress = hdmiRxBase),
         lcdDim.svd("LcdDim", baseAddress = lcdDimBase),
-        gridCtrl.svd("GridCtrl", baseAddress = gridCtrlBase)
+        gridCtrl.svd("GridCtrl", baseAddress = gridCtrlBase),
+        usbCtrl.svd("UsbCtrl", baseAddress = usbCtrlBase)
       ),
       description = "Slabware control system"
     )

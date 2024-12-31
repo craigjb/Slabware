@@ -6,6 +6,7 @@ import spinal.lib.bus.amba4.axi._
 import spinal.lib.io._
 import spinal.lib.blackbox.xilinx.s7.IOBUF
 import spinal.lib.eda.xilinx.VivadoConstraintWriter
+import spinal.lib.com.usb.phy.UsbDevicePhyNative
 
 import slabware.hdmirx.{HdmiIo, DiffPair}
 
@@ -58,6 +59,12 @@ class Slabware(
     hdmi.hpd.setName("HDMI_RX_HPD")
     hdmi.cableDetect.setName("HDMI_RX_PWR_DET")
 
+    // USB
+    val usbDP = master(TriState(Bool())) setName ("USB_D_P")
+    val usbDM = master(TriState(Bool())) setName ("USB_D_N")
+    val usbPullUp = out Bool () setName ("USB_PULLUP")
+    val usbPower = in Bool () setName ("USB_PWR_DET")
+
     // Debug
     val DBG_UART_TX = out Bool ()
     val DBG_UART_RX = out Bool ()
@@ -76,24 +83,36 @@ class Slabware(
 
   val sysClockArea = new ClockingArea(sysClockDomain) {
     val clockGen = new ClockGen(
-      multiplier = 10.0,
+      multiplier = 12.0,
       divider = 1,
-      clkOutDivider = 15
+      clkOutDivider0 = 18,
+      clkOutDivider1 = 25
     )
   }
 
-  val spiClockDomain = ClockDomain(
-    clock = sysClockArea.clockGen.io.clkOut,
+  val spiCD = ClockDomain(
+    clock = sysClockArea.clockGen.io.clkOut0,
     reset = sysClockArea.clockGen.io.locked,
     config = ClockDomainConfig(
       clockEdge = RISING,
       resetKind = ASYNC,
       resetActiveLevel = LOW
     ),
-    frequency = sysClockArea.clockGen.clkOutFreq
+    frequency = sysClockArea.clockGen.clkOut0Freq
   )
 
-  val spiClockArea = new ClockingArea(spiClockDomain) {
+  val usbPhyCD = ClockDomain(
+    clock = sysClockArea.clockGen.io.clkOut1,
+    reset = sysClockArea.clockGen.io.locked,
+    config = ClockDomainConfig(
+      clockEdge = RISING,
+      resetKind = ASYNC,
+      resetActiveLevel = LOW
+    ),
+    frequency = sysClockArea.clockGen.clkOut1Freq
+  )
+
+  val spiClockArea = new ClockingArea(spiCD) {
     val slabControl = new SlabControl(
       firmwareBinPath = firmwareBinPath
     )
@@ -117,6 +136,17 @@ class Slabware(
 
     io.DBG_UART_TX := gridResetArea.grid.io.videoIn.valid.pull()
     io.DBG_UART_RX := gridResetArea.grid.io.videoIn.vSync.pull()
+  }
+
+  val usbIo = new Area {
+    import spiClockArea.slabControl
+    val usbPhy = usbPhyCD on new UsbDevicePhyNative(sim = false)
+    slabControl.io.usbPhy.cc(spiCD, usbPhyCD) <> usbPhy.io.ctrl
+    val nativeIo = usbPhy.io.usb.toNativeIo()
+    io.usbDP <> nativeIo.dp
+    io.usbDM <> nativeIo.dm
+    usbPhy.io.power := !io.usbPower
+    io.usbPullUp := usbPhy.io.pullup
   }
 
   val hdmiCtlI2cIo = new Area {
@@ -143,8 +173,10 @@ object TopLevelVerilog {
     val spinalReport = SpinalConfig(
       inlineRom = true
     ).generateVerilog(
-      new Slabware(
-        firmwareBinPath = "fw/slabware/target/slabware.bin"
+      InOutWrapper(
+        new Slabware(
+          firmwareBinPath = "fw/slabware/target/slabware.bin"
+        )
       )
     )
 

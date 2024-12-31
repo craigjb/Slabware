@@ -55,13 +55,15 @@ case class SvdPeripheral(
 ) {
   import SvdGenerator._
 
+  val regSlices = busIf.slices.filter(slice => slice.isInstanceOf[RegInst])
+
   def body(): String = {
     f"""|  <peripheral>
         |    <name>${name}</name>
         |    ${xmlOrBlank("description", description)}
         |    <baseAddress>0x$baseAddress%x</baseAddress>
         |    <registers>
-        |${busIf.slices.map(_.toSvd).mkString("\n")}
+        |${regSlices.map(_.toSvd).mkString("\n")}
         |    </registers>
         |  </peripheral>""".stripMargin
   }
