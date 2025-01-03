@@ -219,11 +219,17 @@ class UsbDeviceCtrl[B <: BusDefinition.Bus](
         resetValue = 0,
         doc = "Raised when a USB resume occurs"
       )
+      val connect = interruptReg.field(
+        Bool(),
+        AccessType.W1C,
+        resetValue = 0,
+        doc = "Raised when a USB connect occurs (bus power)"
+      )
       val disconnect = interruptReg.field(
         Bool(),
         AccessType.W1C,
         resetValue = 0,
-        doc = "Raised when a USB disconnect occurs"
+        doc = "Raised when a USB disconnect occurs (no bus power)"
       )
     }
 
@@ -275,6 +281,13 @@ class UsbDeviceCtrl[B <: BusDefinition.Bus](
         doc = "Internal ram address width (bits)"
       )
       ramSize := U(p.addressWidth, 4 bits)
+
+      val powerDetected = infoReg.field(
+        Bool(),
+        AccessType.RO,
+        doc = "USB bus power detected"
+      )
+      powerDetected := io.phy.power
     }
   }
 
@@ -304,12 +317,14 @@ class UsbDeviceCtrl[B <: BusDefinition.Bus](
       suspend.setWhen(io.phy.suspend.rise(False))
       val resume = mapping.INTERRUPT.resume
       resume.setWhen(io.phy.resume.valid)
+      val connect = mapping.INTERRUPT.connect
+      connect.setWhen(io.phy.power.rise(False))
       val disconnect = mapping.INTERRUPT.disconnect
       disconnect.setWhen(io.phy.power.fall(False))
 
       import mapping.CONFIG.{interruptEnable => enable}
       val pending =
-        (endpoints.orR || reset || suspend || resume || disconnect || ep0Setup) && enable
+        (endpoints.orR || reset || suspend || resume || connect || disconnect || ep0Setup) && enable
     }
     val halt = new Area {
       val id = mapping.HALT.endpointId

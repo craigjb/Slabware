@@ -22,9 +22,13 @@ pub type SuspendW<'a, REG> = crate::BitWriter1C<'a, REG>;
 pub type ResumeR = crate::BitReader;
 #[doc = "Field `resume` writer - Raised when a USB resume occurs"]
 pub type ResumeW<'a, REG> = crate::BitWriter1C<'a, REG>;
-#[doc = "Field `disconnect` reader - Raised when a USB disconnect occurs\n\n<div class=\"warning\">The field is <b>modified</b> in some way after a read operation.</div>"]
+#[doc = "Field `connect` reader - Raised when a USB connect occurs (bus power)\n\n<div class=\"warning\">The field is <b>modified</b> in some way after a read operation.</div>"]
+pub type ConnectR = crate::BitReader;
+#[doc = "Field `connect` writer - Raised when a USB connect occurs (bus power)"]
+pub type ConnectW<'a, REG> = crate::BitWriter1C<'a, REG>;
+#[doc = "Field `disconnect` reader - Raised when a USB disconnect occurs (no bus power)\n\n<div class=\"warning\">The field is <b>modified</b> in some way after a read operation.</div>"]
 pub type DisconnectR = crate::BitReader;
-#[doc = "Field `disconnect` writer - Raised when a USB disconnect occurs"]
+#[doc = "Field `disconnect` writer - Raised when a USB disconnect occurs (no bus power)"]
 pub type DisconnectW<'a, REG> = crate::BitWriter1C<'a, REG>;
 impl R {
     #[doc = "Bits 0:15 - Raised when an endpoint generates an interrupt"]
@@ -52,10 +56,15 @@ impl R {
     pub fn resume(&self) -> ResumeR {
         ResumeR::new(((self.bits >> 19) & 1) != 0)
     }
-    #[doc = "Bit 20 - Raised when a USB disconnect occurs"]
+    #[doc = "Bit 20 - Raised when a USB connect occurs (bus power)"]
+    #[inline(always)]
+    pub fn connect(&self) -> ConnectR {
+        ConnectR::new(((self.bits >> 20) & 1) != 0)
+    }
+    #[doc = "Bit 21 - Raised when a USB disconnect occurs (no bus power)"]
     #[inline(always)]
     pub fn disconnect(&self) -> DisconnectR {
-        DisconnectR::new(((self.bits >> 20) & 1) != 0)
+        DisconnectR::new(((self.bits >> 21) & 1) != 0)
     }
 }
 impl W {
@@ -89,11 +98,17 @@ impl W {
     pub fn resume(&mut self) -> ResumeW<InterruptSpec> {
         ResumeW::new(self, 19)
     }
-    #[doc = "Bit 20 - Raised when a USB disconnect occurs"]
+    #[doc = "Bit 20 - Raised when a USB connect occurs (bus power)"]
+    #[inline(always)]
+    #[must_use]
+    pub fn connect(&mut self) -> ConnectW<InterruptSpec> {
+        ConnectW::new(self, 20)
+    }
+    #[doc = "Bit 21 - Raised when a USB disconnect occurs (no bus power)"]
     #[inline(always)]
     #[must_use]
     pub fn disconnect(&mut self) -> DisconnectW<InterruptSpec> {
-        DisconnectW::new(self, 20)
+        DisconnectW::new(self, 21)
     }
 }
 #[doc = "Interrupt status\n\nYou can [`read`](crate::Reg::read) this register and get [`interrupt::R`](R). You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`interrupt::W`](W). You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api)."]
@@ -107,7 +122,7 @@ impl crate::Readable for InterruptSpec {}
 impl crate::Writable for InterruptSpec {
     type Safety = crate::Unsafe;
     const ZERO_TO_MODIFY_FIELDS_BITMAP: u32 = 0;
-    const ONE_TO_MODIFY_FIELDS_BITMAP: u32 = 0x001f_ffff;
+    const ONE_TO_MODIFY_FIELDS_BITMAP: u32 = 0x003f_ffff;
 }
 #[doc = "`reset()` method sets Interrupt to value 0"]
 impl crate::Resettable for InterruptSpec {
