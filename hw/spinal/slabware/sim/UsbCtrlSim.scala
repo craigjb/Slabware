@@ -21,15 +21,15 @@ object UsbCtrlSim extends App {
       assert(driver.read(0x0) == 0xdeadbeefL)
       assert(driver.read(0x0) == 0xdeadbeefL)
 
-      driver.write(0x0, 0xbeefdead)
+      driver.write(0x0, 0xbeefdeadL)
       assert(driver.read(0x0) == 0xbeefdeadL)
       assert(driver.read(0x0) == 0xbeefdeadL)
 
-      driver.write(0x3fff, 0xdeadbeef)
+      driver.write(0x3fff, 0xdeadbeefL)
       assert(driver.read(0x3fff) == 0xdeadbeefL)
       assert(driver.read(0x3fff) == 0xdeadbeefL)
 
-      driver.write(0x3fff, 0xbeefdead)
+      driver.write(0x3fff, 0xbeefdeadL)
       assert(driver.read(0x3fff) == 0xbeefdeadL)
       assert(driver.read(0x3fff) == 0xbeefdeadL)
     }
