@@ -31,11 +31,10 @@ embassy-time = { version = "0.3.2", features = [
   "tick-hz-32_768",
 ] }
 embassy-time-driver = "0.1.0"
-embassy-usb-driver = { version = "0.1.0", features = ["defmt"] }
 embedded-hal-async = "1.0.0"
-panic-halt = "1.0.0"
-riscv = { version = "0.12.1", features = ["critical-section-single-hart"] }
-riscv-rt = { version = "0.13.0", features = ["single-hart"] }
+panic-halt = "0.2.0"
+riscv = { version = "0.11.1", features = ["critical-section-single-hart"] }
+riscv-rt = { version = "0.12.2", features = ["single-hart"] }
 slab-pac = { path = "../slab-pac", features = ["rt", "critical-section"] }
 
 [profile.release]
