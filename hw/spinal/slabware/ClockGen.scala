@@ -90,7 +90,6 @@ class ClockGen(
     io.clkOut3.setName("CLKOUT3")
     io.clkOut4.setName("CLKOUT4")
     io.clkOut5.setName("CLKOUT5")
-    io.clkOut5.setName("CLKOUT5")
     io.clkFbOut.setName("CLKFBOUT")
     io.locked.setName("LOCKED")
   }
