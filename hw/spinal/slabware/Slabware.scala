@@ -145,8 +145,15 @@ class Slabware(
     val usbPhy = usbPhyCD on new UsbDevicePhyNative(sim = false)
     slabControl.io.usbPhy.cc(spiCD, usbPhyCD) <> usbPhy.io.ctrl
     val nativeIo = usbPhy.io.usb.toNativeIo()
-    io.usbDP <> nativeIo.dp
-    io.usbDM <> nativeIo.dm
+    when(!usbPhy.io.pullup){
+      nativeIo.dp.writeEnable := True
+      nativeIo.dm.writeEnable := True
+      nativeIo.dp.write := False
+      nativeIo.dm.write := False
+    }
+    val diff = usbPhyCD on nativeIo.bufferized()
+    io.usbDP <> diff.dp
+    io.usbDM <> diff.dm
     usbPhy.io.power := !io.usbPower
     io.usbPullUp := usbPhy.io.pullup
   }
