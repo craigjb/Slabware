@@ -9,6 +9,7 @@ pub struct RegisterBlock {
     config: Config,
     _reserved5: [u8; 0x0c],
     info_reg: InfoReg,
+    interrupt_enable: InterruptEnable,
 }
 impl RegisterBlock {
     #[doc = "0xff00 - USB frame id"]
@@ -41,6 +42,11 @@ impl RegisterBlock {
     pub const fn info_reg(&self) -> &InfoReg {
         &self.info_reg
     }
+    #[doc = "0xff24 - Interrupt enable"]
+    #[inline(always)]
+    pub const fn interrupt_enable(&self) -> &InterruptEnable {
+        &self.interrupt_enable
+    }
 }
 #[doc = "Frame (r) register accessor: USB frame id\n\nYou can [`read`](crate::Reg::read) this register and get [`frame::R`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@frame`]
 module"]
@@ -57,6 +63,11 @@ module"]
 pub type Interrupt = crate::Reg<interrupt::InterruptSpec>;
 #[doc = "Interrupt status"]
 pub mod interrupt;
+#[doc = "InterruptEnable (rw) register accessor: Interrupt enable\n\nYou can [`read`](crate::Reg::read) this register and get [`interrupt_enable::R`]. You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`interrupt_enable::W`]. You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@interrupt_enable`]
+module"]
+pub type InterruptEnable = crate::Reg<interrupt_enable::InterruptEnableSpec>;
+#[doc = "Interrupt enable"]
+pub mod interrupt_enable;
 #[doc = "Halt (rw) register accessor: Halt endpoint\n\nYou can [`read`](crate::Reg::read) this register and get [`halt::R`]. You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`halt::W`]. You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@halt`]
 module"]
 pub type Halt = crate::Reg<halt::HaltSpec>;

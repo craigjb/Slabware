@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Generated from SpinalHDL. Don't edit. -->
-<!-- Date generated: Thu Jan 02 19:52:59 MST 2025 -->
+<!-- Date generated: Sun Apr 13 16:11:52 MST 2025 -->
 <device schemaVersion="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
   xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_0.xsd">
   <name>slabware</name>
@@ -1646,6 +1646,72 @@
             <bitRange>[21:21]</bitRange>
             <access>read-write</access>
             <modifiedWriteValues>oneToClear</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+        </fields>
+      </register>
+      <register>
+        <name>InterruptEnable</name>
+        <description>Interrupt enable</description>
+        <addressOffset>0xff24</addressOffset>
+        <size>32</size>
+        <resetValue>0x0</resetValue>
+        <resetMask>0x3fffff</resetMask>
+        <fields>
+          <field>
+            <name>enableEndpoints</name>
+            <description>Enable endpoint interrupt</description>
+            <bitRange>[15:0]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>enableReset</name>
+            <description>Enable USB reset interrupt</description>
+            <bitRange>[16:16]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>enableEp0Setup</name>
+            <description>Enable endpoint 0 setup interrupt</description>
+            <bitRange>[17:17]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>enableSuspend</name>
+            <description>Enable USB suspend interrupt</description>
+            <bitRange>[18:18]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>enableResume</name>
+            <description>Enable USB resume interrupt</description>
+            <bitRange>[19:19]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>enableConnect</name>
+            <description>Enable USB connect interrupt</description>
+            <bitRange>[20:20]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
+            <readAction>modify</readAction>
+          </field>
+          <field>
+            <name>enableDisconnect</name>
+            <description>Enable USB disconnect interrupt</description>
+            <bitRange>[21:21]</bitRange>
+            <access>read-write</access>
+            <modifiedWriteValues>modify</modifiedWriteValues>
             <readAction>modify</readAction>
           </field>
         </fields>

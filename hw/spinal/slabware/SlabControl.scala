@@ -174,7 +174,7 @@ class SlabControl(
 
     val ram = Axi4SharedOnChipRam(
       dataWidth = 32,
-      byteCount = 16 kB,
+      byteCount = 32 kB,
       idWidth = 4
     )
 

@@ -147,6 +147,7 @@ class UsbDeviceCtrl[B <: BusDefinition.Bus](
 
   val mapping = new Area {
     import SpinalDeviceCtrl.Regs
+    val INTERRUPT_ENABLE_OFFSET = 0xff24
 
     val FRAME = new Area {
       val frameReg =
@@ -230,6 +231,55 @@ class UsbDeviceCtrl[B <: BusDefinition.Bus](
         AccessType.W1C,
         resetValue = 0,
         doc = "Raised when a USB disconnect occurs (no bus power)"
+      )
+    }
+
+    val INTERRUPT_ENABLE = new Area {
+      val interruptReg =
+        busIf
+          .newRegAt(INTERRUPT_ENABLE_OFFSET, doc = "Interrupt enable")
+          .setName("InterruptEnable")
+      val enableEndpoints = interruptReg.field(
+        Bits(p.epCount bits),
+        AccessType.RW,
+        resetValue = 0,
+        doc = "Enable endpoint interrupt"
+      )
+      val enableReset = interruptReg.field(
+        Bool(),
+        AccessType.RW,
+        resetValue = 0,
+        doc = "Enable USB reset interrupt"
+      )
+      val enableEp0Setup = interruptReg.field(
+        Bool(),
+        AccessType.RW,
+        resetValue = 0,
+        doc = "Enable endpoint 0 setup interrupt"
+      )
+      val enableSuspend = interruptReg.field(
+        Bool(),
+        AccessType.RW,
+        resetValue = 0,
+        doc = "Enable USB suspend interrupt"
+      )
+      val enableResume = interruptReg.field(
+        Bool(),
+        AccessType.RW,
+        resetValue = 0,
+        doc = "Enable USB resume interrupt"
+      )
+      val enableConnect = interruptReg.field(
+        Bool(),
+        AccessType.RW,
+        resetValue = 0,
+        doc = "Enable USB connect interrupt"
+      )
+      val enableDisconnect = interruptReg.field(
+        Bool(),
+        AccessType.RW,
+        resetValue = 0,
+        doc = "Enable USB disconnect interrupt"
       )
     }
 
@@ -323,8 +373,17 @@ class UsbDeviceCtrl[B <: BusDefinition.Bus](
       disconnect.setWhen(io.phy.power.fall(False))
 
       import mapping.CONFIG.{interruptEnable => enable}
-      val pending =
-        (endpoints.orR || reset || suspend || resume || connect || disconnect || ep0Setup) && enable
+      import mapping.INTERRUPT_ENABLE._
+
+      val masked = (enableEndpoints & endpoints).orR ||
+        (enableReset && reset) ||
+        (enableEp0Setup && ep0Setup) ||
+        (enableSuspend && suspend) ||
+        (enableResume && resume) ||
+        (enableConnect && connect) ||
+        (enableDisconnect && disconnect)
+
+      val pending = masked && enable
     }
     val halt = new Area {
       val id = mapping.HALT.endpointId

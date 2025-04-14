@@ -135,27 +135,29 @@ class Slabware(
       )
     }
     slabControl.io.videoOut >> gridResetArea.grid.io.videoIn
-
-    io.DBG_UART_TX := gridResetArea.grid.io.videoIn.valid.pull()
-    io.DBG_UART_RX := gridResetArea.grid.io.videoIn.vSync.pull()
   }
 
-  val usbIo = new Area {
+  val usbIo = new ClockingArea(usbPhyCD) {
     import spiClockArea.slabControl
-    val usbPhy = usbPhyCD on new UsbDevicePhyNative(sim = false)
+    val usbPhy = UsbDevicePhyNative(sim = false)
     slabControl.io.usbPhy.cc(spiCD, usbPhyCD) <> usbPhy.io.ctrl
-    val nativeIo = usbPhy.io.usb.toNativeIo()
-    when(!usbPhy.io.pullup){
+
+    val nativeIo = usbPhyCD on usbPhy.io.usb.toNativeIo()
+    when(!usbPhy.io.pullup) {
       nativeIo.dp.writeEnable := True
       nativeIo.dm.writeEnable := True
       nativeIo.dp.write := False
       nativeIo.dm.write := False
     }
     val diff = usbPhyCD on nativeIo.bufferized()
+
     io.usbDP <> diff.dp
     io.usbDM <> diff.dm
     usbPhy.io.power := !io.usbPower
     io.usbPullUp := usbPhy.io.pullup
+
+    io.DBG_UART_TX := usbPhy.io.usb.tx.data
+    io.DBG_UART_RX := sysClockArea.clockGen.io.locked
   }
 
   val hdmiCtlI2cIo = new Area {
@@ -184,7 +186,7 @@ object TopLevelVerilog {
     ).generateVerilog(
       InOutWrapper(
         new Slabware(
-          firmwareBinPath = "fw/slabware/target/slabware.bin"
+          // firmwareBinPath = "fw/slabware/target/slabware.bin"
         )
       )
     )
