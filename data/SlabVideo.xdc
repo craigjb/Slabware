@@ -2,13 +2,13 @@ set_property -dict { \
     PACKAGE_PIN A2 \
     IOSTANDARD LVCMOS33 \
     DRIVE 16 \
-    SLEW SLOW \
+    PULLTYPE NONE \
   } [get_ports { USB_D_N }];
 set_property -dict { \
     PACKAGE_PIN A3 \
     IOSTANDARD LVCMOS33 \
     DRIVE 16 \
-    SLEW SLOW \
+    PULLTYPE NONE \
   } [get_ports { USB_D_P }];
 set_property -dict { \
     PACKAGE_PIN A4 \
@@ -293,7 +293,8 @@ set_property -dict { \
 set_property -dict { \
     PACKAGE_PIN B1 \
     IOSTANDARD LVCMOS33 \
-    DRIVE 4 \
+    DRIVE 16 \
+    PULLTYPE NONE \
   } [get_ports { USB_PULLUP }];
 set_property -dict { \
     PACKAGE_PIN B2 \
