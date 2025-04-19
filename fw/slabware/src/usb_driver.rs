@@ -1,5 +1,5 @@
 use core::future::poll_fn;
-use core::sync::atomic::{compiler_fence, Ordering};
+use core::sync::atomic::{compiler_fence, AtomicBool, Ordering};
 use core::task::Poll;
 use core::{marker::PhantomData, slice};
 
@@ -24,6 +24,10 @@ const ENDPOINT_DESC_WORDS: usize = 3;
 static BUS_WAKER: AtomicWaker = AtomicWaker::new();
 static ENDPOINT_WAKERS: [AtomicWaker; ENDPOINT_COUNT] =
     [const { AtomicWaker::new() }; ENDPOINT_COUNT];
+static EP0_SETUP_RECEIVED: AtomicBool = AtomicBool::new(false);
+static BUS_RESET: AtomicBool = AtomicBool::new(false);
+static BUS_SUSPENDED: AtomicBool = AtomicBool::new(false);
+static BUS_RESUMED: AtomicBool = AtomicBool::new(false);
 
 bitfield! {
     struct EndpointRegister(u32);
@@ -165,6 +169,14 @@ impl<'a> Driver<'a> {
         self.next_endpoint += 1;
         self.next_ram_word = aligned_word_addr + total_words;
 
+        defmt::trace!(
+            "Allocated endpoint ep={} dir={:?} desc_word_addr={} data_word_addr={}",
+            endpoint_index,
+            D::dir(),
+            aligned_word_addr,
+            aligned_word_addr + 3
+        );
+
         Ok(Endpoint {
             _phantom: PhantomData,
             info: endpoint_info,
@@ -195,10 +207,13 @@ impl<'a> Driver<'a> {
             return Err(EndpointAllocError);
         }
 
-        let mut endpoint_reg = EndpointRegister(0);
-        endpoint_reg.set_enable(true);
-        endpoint_reg.set_max_packet_size(max_packet_size);
-        self.endpoint_regs[0].set(endpoint_reg.0);
+        let mut ep_reg = EndpointRegister(0);
+        ep_reg.set_enable(true);
+        ep_reg.set_stall(false);
+        ep_reg.set_nack(false);
+        ep_reg.set_data_phase(false);
+        ep_reg.set_max_packet_size(max_packet_size);
+        self.endpoint_regs[0].set(ep_reg.0);
 
         self.next_ram_word = in_aligned_word_addr + total_words;
 
@@ -245,13 +260,13 @@ impl<'a> driver::Driver<'a> for Driver<'a> {
             .write(|w| w.interrupt_enable().set_bit().pull_up_enable().set_bit());
         defmt::debug!("[USB] Started (pull-up enabled)");
 
-        (
-            Bus {
-                regs: self.regs,
-                connected: false,
-            },
-            control_pipe,
-        )
+        let mut bus = Bus {
+            regs: self.regs,
+            connected: false,
+        };
+        bus.enable_bus_interrupts();
+
+        (bus, control_pipe)
     }
 }
 
@@ -347,16 +362,19 @@ impl EndpointBuffer {
     fn read(&mut self, buf: &mut [u8]) {
         defmt::assert!(buf.len() <= self.packet_words << 2);
         let num_whole_words = buf.len() >> 2;
+        let num_rem_bytes = buf.len() % 4;
         compiler_fence(Ordering::SeqCst);
         unsafe {
+            let mem_ptr = UsbCtrl::ptr().cast::<u32>().add(self.data_word_addr());
             let buf_whole_words =
                 slice::from_raw_parts_mut(buf.as_mut_ptr().cast::<u32>(), num_whole_words);
-            let mem_ptr = UsbCtrl::ptr().cast::<u32>().add(self.data_word_addr());
-            let mem_words = slice::from_raw_parts(mem_ptr, num_whole_words);
-            buf_whole_words.copy_from_slice(mem_words);
+            for (i, word_mut) in buf_whole_words.iter_mut().enumerate() {
+                *word_mut = mem_ptr.add(i).read_volatile();
+            }
             if buf.len() & 0x3 > 0 {
-                let rem = mem_ptr.add(num_whole_words).read_volatile();
-                buf[(num_whole_words << 2)..].copy_from_slice(&rem.to_le_bytes());
+                let rem = mem_ptr.add(num_whole_words).read_volatile().to_le_bytes();
+                let rem_slice = &rem[0..num_rem_bytes];
+                buf[(num_whole_words << 2)..].copy_from_slice(rem_slice);
             }
         }
         compiler_fence(Ordering::SeqCst);
@@ -366,14 +384,23 @@ impl EndpointBuffer {
         defmt::assert!(buf.len() <= self.packet_words << 2);
         defmt::assert!(self.word_addr.is_endpoint_desc());
         let num_words = (buf.len() + 3) >> 2;
-        compiler_fence(Ordering::SeqCst);
+        defmt::trace!(
+            "[USB] EndpointBuffer write buf.len()={} num_words={}",
+            buf.len(),
+            num_words
+        );
         unsafe {
+            let mem_ptr_base = UsbCtrl::ptr().cast::<u32>().add(self.data_word_addr()) as *mut u32;
+            defmt::trace!(
+                "[USB] EndpointBuffer write mem_ptr={:#08X} data_word_addr={:#08X}",
+                mem_ptr_base,
+                self.data_word_addr()
+            );
             let buf_words = slice::from_raw_parts(buf.as_ptr().cast::<u32>(), num_words);
-            let mem_ptr = UsbCtrl::ptr().cast::<u32>().add(self.data_word_addr()) as *mut _;
-            let mem_words = slice::from_raw_parts_mut(mem_ptr, num_words);
-            mem_words.copy_from_slice(buf_words);
+            for (i, word) in buf_words.iter().enumerate() {
+                mem_ptr_base.add(i).write_volatile(*word);
+            }
         }
-        compiler_fence(Ordering::SeqCst);
     }
 }
 
@@ -454,15 +481,22 @@ impl<'a> driver::Endpoint for Endpoint<'a, Out> {
 impl<'a> driver::EndpointIn for Endpoint<'a, In> {
     async fn write(&mut self, data: &[u8]) -> Result<(), EndpointError> {
         let ep_index = self.info.addr.index();
-        defmt::debug!("[USB] write ep={}", ep_index);
+        defmt::debug!("[USB] write ep={} data_len={}", ep_index, data.len());
 
         if data.len() > self.info.max_packet_size as usize {
             return Err(EndpointError::BufferOverflow);
         }
 
-        let head =
-            self.buffer
-                .write_descriptor(data.len() as u16, Direction::In, true, true, false);
+        let is_full_packet = data.len() == self.info.max_packet_size as usize;
+        let completion_on_full_flag = is_full_packet;
+
+        let head = self.buffer.write_descriptor(
+            data.len() as u16,
+            Direction::In,
+            true,
+            completion_on_full_flag,
+            false,
+        );
         self.buffer.write(data);
         modify_endpoint_reg(ep_index, |ep_reg| {
             ep_reg.set_enable(true);
@@ -471,30 +505,32 @@ impl<'a> driver::EndpointIn for Endpoint<'a, In> {
             ep_reg.set_head(head);
         });
 
-        let regs = unsafe { UsbCtrl::steal() };
-        let interrupt_mask = 1 << ep_index;
-        critical_section::with(|_| {
-            regs.interrupt_enable().modify(|r, w| unsafe {
-                w.enable_endpoints()
-                    .bits(r.enable_endpoints().bits() | interrupt_mask)
-            })
-        });
-        poll_fn(|cx| {
+        let desc_w0 = poll_fn(|cx| {
             ENDPOINT_WAKERS[ep_index].register(cx.waker());
 
-            if regs.interrupt().read().endpoints().bits() & interrupt_mask != 0 {
-                regs.interrupt()
-                    .write(|w| unsafe { w.endpoints().bits(interrupt_mask) });
-                Poll::Ready(())
+            let regs = unsafe { UsbCtrl::steal() };
+            defmt::trace!(
+                "[USB] EndpointIn::write poll ep_int_en={:#02x}",
+                regs.interrupt_enable().read().enable_endpoints().bits()
+            );
+
+            let desc_w0 = self.buffer.read_descriptor_w0();
+            defmt::trace!(
+                "[USB] EndpointIn::write woken ep={}, code={}",
+                ep_index,
+                desc_w0.code()
+            );
+            if desc_w0.code() != 0xf {
+                Poll::Ready(desc_w0)
             } else {
                 Poll::Pending
             }
         })
         .await;
 
-        let desc_w0 = self.buffer.read_descriptor_w0();
         defmt::debug!(
-            "[USB] write DONE code={} offset={}",
+            "[USB] write DONE ep={} code={} offset={}",
+            ep_index,
             desc_w0.code(),
             desc_w0.offset()
         );
@@ -502,7 +538,7 @@ impl<'a> driver::EndpointIn for Endpoint<'a, In> {
         if desc_w0.code() == 0 {
             Ok(())
         } else {
-            defmt::panic!("USB endpoint error code: {}", desc_w0.code())
+            defmt::panic!("USB endpoint error ep={} code={}", ep_index, desc_w0.code())
         }
     }
 }
@@ -522,28 +558,23 @@ impl<'a> driver::EndpointOut for Endpoint<'a, Out> {
             ep_reg.set_head(head);
         });
 
-        let regs = unsafe { UsbCtrl::steal() };
-        let interrupt_mask = 1 << ep_index;
-        critical_section::with(|_| {
-            regs.interrupt_enable().modify(|r, w| unsafe {
-                w.enable_endpoints()
-                    .bits(r.enable_endpoints().bits() | interrupt_mask)
-            })
-        });
-        poll_fn(|cx| {
+        let desc_w0 = poll_fn(|cx| {
             ENDPOINT_WAKERS[ep_index].register(cx.waker());
 
-            if regs.interrupt().read().endpoints().bits() & interrupt_mask != 0 {
-                regs.interrupt()
-                    .write(|w| unsafe { w.endpoints().bits(interrupt_mask) });
-                Poll::Ready(())
+            let desc_w0 = self.buffer.read_descriptor_w0();
+            defmt::trace!(
+                "[USB] EndpointOut::read woken ep={}, code={}",
+                ep_index,
+                desc_w0.code()
+            );
+            if desc_w0.code() != 0xf {
+                Poll::Ready(desc_w0)
             } else {
                 Poll::Pending
             }
         })
         .await;
 
-        let desc_w0 = self.buffer.read_descriptor_w0();
         defmt::debug!(
             "[USB] read DONE code={} offset={}",
             desc_w0.code(),
@@ -604,10 +635,17 @@ pub struct Bus {
 
 impl Bus {
     fn disable_all_endpoints(&mut self) {
-        for (ep_index, ep_waker) in ENDPOINT_WAKERS[1..].iter().enumerate() {
+        critical_section::with(|_| {
+            self.regs
+                .interrupt_enable()
+                .modify(|_, w| unsafe { w.enable_endpoints().bits(0) })
+        });
+        for (ep_index, ep_waker) in ENDPOINT_WAKERS.iter().enumerate() {
             modify_endpoint_reg(ep_index, |ep_reg| {
                 ep_reg.set_enable(false);
                 ep_reg.set_head(0);
+                ep_reg.set_stall(false);
+                ep_reg.set_nack(false);
                 ep_reg.set_data_phase(false);
             });
             ep_waker.wake()
@@ -643,6 +681,21 @@ impl Bus {
             || isr.suspend().bit_is_set()
     }
 
+    fn clear_bus_interrupt(regs: &UsbCtrl) {
+        regs.interrupt().write(|w| {
+            w.connect()
+                .clear_bit_by_one()
+                .disconnect()
+                .clear_bit_by_one()
+                .resume()
+                .clear_bit_by_one()
+                .reset()
+                .clear_bit_by_one()
+                .suspend()
+                .clear_bit_by_one()
+        });
+    }
+
     fn disable_bus_interrupts(regs: &UsbCtrl) {
         critical_section::with(|_| {
             regs.interrupt_enable().modify(|_, w| {
@@ -667,26 +720,15 @@ impl driver::Bus for Bus {
     async fn disable(&mut self) {}
 
     async fn poll(&mut self) -> Event {
-        self.enable_bus_interrupts();
         poll_fn(move |cx| {
             BUS_WAKER.register(cx.waker());
             let info_status = self.regs.info_reg().read();
-            let interrupt_status = self.regs.interrupt().read();
 
-            if !self.connected
-                && (info_status.power_detected().bit_is_set()
-                    || interrupt_status.connect().bit_is_set())
-            {
+            if !self.connected && info_status.power_detected().bit_is_set() {
                 defmt::debug!("[USB] connected");
-                self.regs
-                    .interrupt()
-                    .write(|w| w.connect().clear_bit_by_one());
                 self.connected = true;
                 return Poll::Ready(Event::PowerDetected);
-            } else if self.connected
-                && (info_status.power_detected().bit_is_clear()
-                    || interrupt_status.disconnect().bit_is_set())
-            {
+            } else if self.connected && info_status.power_detected().bit_is_clear() {
                 defmt::debug!("[USB] disconnected");
                 self.regs
                     .interrupt()
@@ -695,7 +737,11 @@ impl driver::Bus for Bus {
                 return Poll::Ready(Event::PowerRemoved);
             }
 
-            if interrupt_status.resume().bit_is_set() {
+            if critical_section::with(|_| {
+                let val = BUS_RESUMED.load(Ordering::SeqCst);
+                BUS_RESUMED.store(false, Ordering::SeqCst);
+                val
+            }) {
                 defmt::debug!("[USB] resumed");
                 self.regs
                     .interrupt()
@@ -703,17 +749,41 @@ impl driver::Bus for Bus {
                 return Poll::Ready(Event::Resume);
             }
 
-            if interrupt_status.reset().bit_is_set() {
+            if critical_section::with(|_| {
+                let val = BUS_RESET.load(Ordering::SeqCst);
+                BUS_RESET.store(false, Ordering::SeqCst);
+                val
+            }) {
                 defmt::debug!("[USB] reset");
                 self.regs
                     .interrupt()
                     .write(|w| w.reset().clear_bit_by_one());
                 self.clear_address();
                 self.disable_all_endpoints();
+
+                // Enable endpoint 0 for setup
+                modify_endpoint_reg(0, |ep_reg| {
+                    ep_reg.set_enable(true);
+                    ep_reg.set_stall(false);
+                    ep_reg.set_nack(false);
+                    ep_reg.set_head(0);
+                    ep_reg.set_data_phase(false);
+                });
+
+                critical_section::with(|_| {
+                    self.regs.interrupt_enable().modify(|_, w| unsafe {
+                        w.enable_endpoints().bits(0x1).enable_ep0setup().set_bit()
+                    })
+                });
+
                 return Poll::Ready(Event::Reset);
             }
 
-            if interrupt_status.suspend().bit_is_set() {
+            if critical_section::with(|_| {
+                let val = BUS_SUSPENDED.load(Ordering::SeqCst);
+                BUS_SUSPENDED.store(false, Ordering::SeqCst);
+                val
+            }) {
                 defmt::debug!("[USB] suspended");
                 self.regs
                     .interrupt()
@@ -721,8 +791,6 @@ impl driver::Bus for Bus {
                 return Poll::Ready(Event::Suspend);
             }
 
-            // No pending, re-enable all interrupts
-            self.enable_bus_interrupts();
             Poll::Pending
         })
         .await
@@ -731,8 +799,21 @@ impl driver::Bus for Bus {
     fn endpoint_set_enabled(&mut self, ep_addr: EndpointAddress, enabled: bool) {
         let ep_index = ep_addr.index();
         defmt::debug!("[USB] set_enabled ep={} enabled={}", ep_index, enabled);
+
+        let interrupt_mask = 1 << ep_index;
+        critical_section::with(|_| {
+            self.regs.interrupt_enable().modify(|r, w| unsafe {
+                w.enable_endpoints()
+                    .bits(r.enable_endpoints().bits() | interrupt_mask)
+            })
+        });
+
         modify_endpoint_reg(ep_index, |ep_reg| {
             ep_reg.set_enable(enabled);
+            ep_reg.set_stall(false);
+            ep_reg.set_nack(false);
+            ep_reg.set_head(0);
+            ep_reg.set_data_phase(false);
         });
         ENDPOINT_WAKERS[ep_index].wake()
     }
@@ -770,6 +851,59 @@ pub struct ControlPipe {
     in_buffer: EndpointBuffer,
 }
 
+impl ControlPipe {
+    async fn receive_status_out(&mut self) {
+        defmt::trace!("[USB] control: receive_status_out");
+
+        let head = self
+            .out_buffer
+            .write_descriptor(0, Direction::Out, true, true, false);
+        modify_endpoint_reg(0, |ep_reg| {
+            ep_reg.set_enable(true);
+            ep_reg.set_stall(false);
+            ep_reg.set_nack(false);
+            ep_reg.set_data_phase(true);
+            ep_reg.set_head(head);
+        });
+
+        defmt::trace!("[USB] control: OUT ZLP configured, assuming HW handles it.");
+    }
+
+    async fn send_status_in(&mut self, reject: bool) -> u8 {
+        defmt::trace!("[USB] control: send_status_in reject={}", reject);
+
+        let head = self
+            .in_buffer
+            .write_descriptor(0, Direction::In, true, true, false);
+        modify_endpoint_reg(0, |ep_reg| {
+            ep_reg.set_enable(true);
+            ep_reg.set_stall(reject);
+            ep_reg.set_nack(false);
+            ep_reg.set_data_phase(true);
+            ep_reg.set_head(head);
+        });
+
+        let desc_w0 = poll_fn(|cx| {
+            ENDPOINT_WAKERS[0].register(cx.waker());
+
+            let desc_w0 = self.in_buffer.read_descriptor_w0();
+            defmt::trace!(
+                "[USB] control: send_status_in woken code={}",
+                desc_w0.code()
+            );
+            if desc_w0.code() != 0xf {
+                Poll::Ready(desc_w0)
+            } else {
+                Poll::Pending
+            }
+        })
+        .await;
+
+        defmt::trace!("[USB] control: send_status_in done code={}", desc_w0.code());
+        desc_w0.code()
+    }
+}
+
 impl driver::ControlPipe for ControlPipe {
     fn max_packet_size(&self) -> usize {
         self.max_packet_size
@@ -780,25 +914,19 @@ impl driver::ControlPipe for ControlPipe {
 
         modify_endpoint_reg(0, |ep_reg| {
             ep_reg.set_enable(true);
-            ep_reg.set_stall(false);
             ep_reg.set_nack(false);
             ep_reg.set_data_phase(false);
             ep_reg.set_head(0);
         });
 
-        critical_section::with(|_| {
-            self.regs
-                .interrupt_enable()
-                .modify(|_, w| w.enable_ep0setup().set_bit());
-        });
-
         poll_fn(|cx| {
             ENDPOINT_WAKERS[0].register(cx.waker());
 
-            if self.regs.interrupt().read().ep0setup().bit_is_set() {
-                self.regs
-                    .interrupt()
-                    .write(|w| w.ep0setup().clear_bit_by_one());
+            if critical_section::with(|_| {
+                let val = EP0_SETUP_RECEIVED.load(Ordering::SeqCst);
+                EP0_SETUP_RECEIVED.store(false, Ordering::SeqCst);
+                val
+            }) {
                 Poll::Ready(())
             } else {
                 Poll::Pending
@@ -835,28 +963,24 @@ impl driver::ControlPipe for ControlPipe {
             ep_reg.set_stall(false);
             ep_reg.set_nack(false);
             ep_reg.set_head(head);
+            if first {
+                ep_reg.set_data_phase(true);
+            }
         });
 
-        critical_section::with(|_| {
-            self.regs.interrupt_enable().modify(|r, w| unsafe {
-                w.enable_endpoints().bits(r.enable_endpoints().bits() | 0x1)
-            });
-        });
-        poll_fn(|cx| {
+        let desc_w0 = poll_fn(|cx| {
             ENDPOINT_WAKERS[0].register(cx.waker());
 
-            if self.regs.interrupt().read().endpoints().bits() & 0x1 != 0 {
-                self.regs
-                    .interrupt()
-                    .write(|w| unsafe { w.endpoints().bits(0x1) });
-                Poll::Ready(())
+            let desc_w0 = self.out_buffer.read_descriptor_w0();
+            defmt::trace!("[USB] control: data_out woken code={}", desc_w0.code());
+            if desc_w0.code() != 0xf {
+                Poll::Ready(desc_w0)
             } else {
                 Poll::Pending
             }
         })
         .await;
 
-        let desc_w0 = self.out_buffer.read_descriptor_w0();
         defmt::debug!(
             "[USB] control: data_out DONE code={} offset={}",
             desc_w0.code(),
@@ -888,40 +1012,50 @@ impl driver::ControlPipe for ControlPipe {
 
         let head =
             self.in_buffer
-                .write_descriptor(data.len() as u16, Direction::In, true, true, false);
+                .write_descriptor(data.len() as u16, Direction::In, true, !last, false);
         self.in_buffer.write(data);
         modify_endpoint_reg(0, |ep_reg| {
             ep_reg.set_enable(true);
             ep_reg.set_stall(false);
             ep_reg.set_nack(false);
             ep_reg.set_head(head);
+            if first {
+                ep_reg.set_data_phase(true);
+            }
         });
 
-        critical_section::with(|_| {
-            self.regs.interrupt_enable().modify(|r, w| unsafe {
-                w.enable_endpoints().bits(r.enable_endpoints().bits() | 0x1)
-            });
-        });
-        poll_fn(|cx| {
+        let desc_w0 = poll_fn(|cx| {
             ENDPOINT_WAKERS[0].register(cx.waker());
 
-            if self.regs.interrupt().read().endpoints().bits() & 0x1 != 0 {
-                self.regs
-                    .interrupt()
-                    .write(|w| unsafe { w.endpoints().bits(0x1) });
-                Poll::Ready(())
+            let desc_w0 = self.in_buffer.read_descriptor_w0();
+            defmt::trace!("[USB] control: data_in woken code={}", desc_w0.code());
+            if desc_w0.code() != 0xf {
+                Poll::Ready(desc_w0)
             } else {
                 Poll::Pending
             }
         })
         .await;
 
-        let desc_w0 = self.out_buffer.read_descriptor_w0();
-        defmt::debug!(
-            "[USB] control: data_in DONE code={} offset={}",
-            desc_w0.code(),
-            desc_w0.offset()
-        );
+        if desc_w0.code() == 0 {
+            defmt::debug!(
+                "[USB] control: data_in successful code={} offset={}",
+                desc_w0.code(),
+                desc_w0.offset()
+            );
+        } else {
+            defmt::debug!(
+                "[USB] control: data_in failed code={} offset={}",
+                desc_w0.code(),
+                desc_w0.offset()
+            );
+        }
+
+        if last {
+            defmt::debug!("[USB] data_in status stage");
+            self.receive_status_out().await;
+        }
+
         if desc_w0.code() == 0 {
             Ok(())
         } else {
@@ -930,30 +1064,14 @@ impl driver::ControlPipe for ControlPipe {
     }
 
     async fn accept(&mut self) {
+        // Called after SETUP (no data) or OUT data. Needs IN status.
         defmt::debug!("[USB] control: accept");
-        modify_endpoint_reg(0, |ep_reg| {
-            ep_reg.set_stall(false);
-            ep_reg.set_nack(false);
-        });
-
-        // critical_section::with(|_| {
-        //     self.regs.interrupt_enable().modify(|r, w| unsafe {
-        //         w.enable_endpoints().bits(r.enable_endpoints().bits() | 0x1)
-        //     });
-        // });
-        // poll_fn(|cx| {
-        //     ENDPOINT_WAKERS[0].register(cx.waker());
-        //
-        //     if self.regs.interrupt().read().endpoints().bits() & 0x1 != 0 {
-        //         self.regs
-        //             .interrupt()
-        //             .write(|w| unsafe { w.endpoints().bits(0x1) });
-        //         Poll::Ready(())
-        //     } else {
-        //         Poll::Pending
-        //     }
-        // })
-        // .await;
+        let code = self.send_status_in(false).await;
+        if code == 0 {
+            defmt::debug!("[USB] control: accept IN ZLP successful code={}", code,);
+        } else {
+            defmt::warn!("[USB] control: accept IN ZLP failed code={}", code,);
+        }
     }
 
     async fn reject(&mut self) {
@@ -965,10 +1083,24 @@ impl driver::ControlPipe for ControlPipe {
 
     async fn accept_set_address(&mut self, addr: u8) {
         defmt::debug!("[USB] control: setting addr={}", addr);
+
         self.regs
             .address()
             .write(|w| unsafe { w.trigger().set_bit().value().bits(addr) });
-        self.accept().await;
+        defmt::debug!("[USB] control: address reg set addr={} trigger=1", addr);
+
+        let code = self.send_status_in(false).await;
+        if code == 0 {
+            defmt::debug!("[USB] control: set address IN ZLP status successful");
+            // hardware automatically enables the address now.
+        } else {
+            defmt::warn!(
+                "[USB] control: set_address IN ZLP status failed code={} addr={}.",
+                code,
+                addr
+            );
+            // trigger bit gets cleared by hardware anyway,
+        }
     }
 }
 
@@ -976,26 +1108,40 @@ pub fn handle_usb_interrupt() {
     let regs = unsafe { UsbCtrl::steal() };
     critical_section::with(|_| {
         let isr = regs.interrupt().read();
+
         if Bus::is_bus_interrupt(&isr) {
-            Bus::disable_bus_interrupts(&regs);
+            defmt::trace!("[USB] IRQ: Bus interrupt isr={:#08x}", isr.bits());
+            if isr.reset().bit_is_set() {
+                BUS_RESET.store(true, Ordering::SeqCst);
+            }
+            if isr.suspend().bit_is_set() {
+                BUS_SUSPENDED.store(true, Ordering::SeqCst);
+            }
+            if isr.resume().bit_is_set() {
+                BUS_RESUMED.store(true, Ordering::SeqCst);
+            }
+            Bus::clear_bus_interrupt(&regs);
             BUS_WAKER.wake();
         }
         if isr.ep0setup().bit_is_set() {
-            regs.interrupt_enable()
-                .modify(|_, w| w.enable_ep0setup().clear_bit());
+            defmt::trace!("[USB] IRQ: EP0 setup isr={:#08x}", isr.bits());
+            regs.interrupt().write(|w| w.ep0setup().clear_bit_by_one());
+            EP0_SETUP_RECEIVED.store(true, Ordering::SeqCst);
             ENDPOINT_WAKERS[0].wake();
         }
         let ep_ints = isr.endpoints().bits();
         if ep_ints != 0 {
+            defmt::trace!("[USB] IRQ isr={:#08x}", isr.bits());
+
+            regs.interrupt()
+                .write(|w| unsafe { w.endpoints().bits(ep_ints) });
+
             for (ep_index, ep_waker) in ENDPOINT_WAKERS.iter().enumerate() {
                 if ep_ints & (1 << ep_index) != 0 {
+                    defmt::trace!("[USB] IRQ waking ep={}", ep_index);
                     ep_waker.wake();
                 }
             }
-            regs.interrupt_enable().modify(|r, w| unsafe {
-                w.enable_endpoints()
-                    .bits(r.enable_endpoints().bits() & (!ep_ints))
-            });
         }
     })
 }

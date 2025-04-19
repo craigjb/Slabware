@@ -60,6 +60,7 @@ async fn main(spawner: Spawner) {
     config.manufacturer = Some("craigjb.com");
     config.product = Some("USB-serial test");
     config.serial_number = Some("12345678");
+    config.max_packet_size_0 = 64;
 
     let mut config_descriptor = [0; 256];
     let mut bos_descriptor = [0; 256];
@@ -80,14 +81,18 @@ async fn main(spawner: Spawner) {
     let usb_fut = usb.run();
 
     let hello_fut = async {
+        class.wait_connection().await;
+        defmt::info!("[CDC] Connected");
+        let mut buf = [0; 64];
         loop {
-            class.wait_connection().await;
-            defmt::info!("[CDC] Connected");
-            // while class.write_packet("Hello!\n".as_bytes()).await.is_ok() {
-            //     Timer::after_secs(1).await;
+            class.read_packet(&mut buf).await;
+            class.write_packet(&buf).await;
+            // while class.write_packet("Hello!\n\r".as_bytes()).await.is_ok() {
+            // defmt::info!("[CDC] Sent hello");
+            // Timer::after_secs(1).await;
             // }
-            // defmt::info!("[CDC] Disconnected");
         }
+        // defmt::info!("[CDC] Disconnected");
     };
 
     join(usb_fut, hello_fut).await;
