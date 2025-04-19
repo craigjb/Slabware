@@ -420,6 +420,29 @@ impl Dir for Out {
     }
 }
 
+fn enable_endpoint_interrupt(regs: &UsbCtrl, ep_index: usize) {
+    let ep_mask = 1 << ep_index;
+    critical_section::with(|_| {
+        regs.interrupt_enable().modify(|r, w| unsafe {
+            w.enable_endpoints()
+                .bits(r.enable_endpoints().bits() | ep_mask)
+        });
+    });
+}
+
+fn is_endpoint_interrupt_set(regs: &UsbCtrl, ep_index: usize) -> bool {
+    let ep_mask = 1 << ep_index;
+    regs.interrupt().read().endpoints().bits() & ep_mask != 0
+}
+
+fn disable_endpoint_interrupt(regs: &UsbCtrl, ep_index: usize) {
+    let ep_mask = 1 << ep_index;
+    critical_section::with(|_| {
+        regs.interrupt()
+            .write(|w| unsafe { w.endpoints().bits(ep_mask) });
+    });
+}
+
 pub struct Endpoint<'a, DIR: Dir> {
     _phantom: PhantomData<(&'a mut UsbCtrl, DIR)>,
     info: EndpointInfo,
@@ -502,20 +525,13 @@ impl<'a> driver::EndpointIn for Endpoint<'a, In> {
         });
 
         let regs = unsafe { UsbCtrl::steal() };
-        let ep_mask = 1 << ep_index;
-        critical_section::with(|_| {
-            regs.interrupt_enable().modify(|r, w| unsafe {
-                w.enable_endpoints()
-                    .bits(r.enable_endpoints().bits() | ep_mask)
-            });
-        });
+        enable_endpoint_interrupt(&regs, ep_index);
 
         poll_fn(|cx| {
             ENDPOINT_WAKERS[ep_index].register(cx.waker());
 
-            if regs.interrupt().read().endpoints().bits() & ep_mask != 0 {
-                regs.interrupt()
-                    .write(|w| unsafe { w.endpoints().bits(ep_mask) });
+            if is_endpoint_interrupt_set(&regs, ep_index) {
+                disable_endpoint_interrupt(&regs, ep_index);
                 Poll::Ready(())
             } else {
                 Poll::Pending
@@ -555,20 +571,13 @@ impl<'a> driver::EndpointOut for Endpoint<'a, Out> {
         });
 
         let regs = unsafe { UsbCtrl::steal() };
-        let ep_mask = 1 << ep_index;
-        critical_section::with(|_| {
-            regs.interrupt_enable().modify(|r, w| unsafe {
-                w.enable_endpoints()
-                    .bits(r.enable_endpoints().bits() | ep_mask)
-            });
-        });
+        enable_endpoint_interrupt(&regs, ep_index);
 
         poll_fn(|cx| {
             ENDPOINT_WAKERS[ep_index].register(cx.waker());
 
-            if regs.interrupt().read().endpoints().bits() & ep_mask != 0 {
-                regs.interrupt()
-                    .write(|w| unsafe { w.endpoints().bits(ep_mask) });
+            if is_endpoint_interrupt_set(&regs, ep_index) {
+                disable_endpoint_interrupt(&regs, ep_index);
                 Poll::Ready(())
             } else {
                 Poll::Pending
@@ -856,18 +865,13 @@ impl ControlPipe {
         });
 
         let regs = unsafe { UsbCtrl::steal() };
-        critical_section::with(|_| {
-            regs.interrupt_enable().modify(|r, w| unsafe {
-                w.enable_endpoints().bits(r.enable_endpoints().bits() | 0x1)
-            });
-        });
+        enable_endpoint_interrupt(&regs, 0);
 
         poll_fn(|cx| {
             ENDPOINT_WAKERS[0].register(cx.waker());
 
-            if regs.interrupt().read().endpoints().bits() & 0x1 != 0 {
-                regs.interrupt()
-                    .write(|w| unsafe { w.endpoints().bits(0x1) });
+            if is_endpoint_interrupt_set(&regs, 0) {
+                disable_endpoint_interrupt(&regs, 0);
                 Poll::Ready(())
             } else {
                 Poll::Pending
@@ -949,18 +953,13 @@ impl driver::ControlPipe for ControlPipe {
         });
 
         let regs = unsafe { UsbCtrl::steal() };
-        critical_section::with(|_| {
-            regs.interrupt_enable().modify(|r, w| unsafe {
-                w.enable_endpoints().bits(r.enable_endpoints().bits() | 0x1)
-            });
-        });
+        enable_endpoint_interrupt(&regs, 0);
 
         poll_fn(|cx| {
             ENDPOINT_WAKERS[0].register(cx.waker());
 
-            if regs.interrupt().read().endpoints().bits() & 0x1 != 0 {
-                regs.interrupt()
-                    .write(|w| unsafe { w.endpoints().bits(0x1) });
+            if is_endpoint_interrupt_set(&regs, 0) {
+                disable_endpoint_interrupt(&regs, 0);
                 Poll::Ready(())
             } else {
                 Poll::Pending
@@ -1013,18 +1012,12 @@ impl driver::ControlPipe for ControlPipe {
         });
 
         let regs = unsafe { UsbCtrl::steal() };
-        critical_section::with(|_| {
-            regs.interrupt_enable().modify(|r, w| unsafe {
-                w.enable_endpoints().bits(r.enable_endpoints().bits() | 0x1)
-            });
-        });
-
+        enable_endpoint_interrupt(&regs, 0);
         poll_fn(|cx| {
             ENDPOINT_WAKERS[0].register(cx.waker());
 
-            if regs.interrupt().read().endpoints().bits() & 0x1 != 0 {
-                regs.interrupt()
-                    .write(|w| unsafe { w.endpoints().bits(0x1) });
+            if is_endpoint_interrupt_set(&regs, 0) {
+                disable_endpoint_interrupt(&regs, 0);
                 Poll::Ready(())
             } else {
                 Poll::Pending
