@@ -39,6 +39,7 @@ panic-halt = "1.0.0"
 riscv = { version = "0.12.1", features = ["critical-section-single-hart"] }
 riscv-rt = { version = "0.12.2", features = ["single-hart"] }
 slab-pac = { path = "../slab-pac", features = ["rt", "critical-section"] }
+usbd-hid = "0.8.2"
 vcell = "0.1.3"
 
 [profile.release]

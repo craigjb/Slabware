@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Generated from SpinalHDL. Don't edit. -->
-<!-- Date generated: Fri Apr 18 15:08:50 MST 2025 -->
+<!-- Date generated: Fri Apr 18 20:56:21 MST 2025 -->
 <device schemaVersion="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
   xs:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1_0.xsd">
   <name>slabware</name>

@@ -589,6 +589,7 @@ dependencies = [
  "riscv 0.12.1",
  "riscv-rt",
  "slab-pac",
+ "usbd-hid",
  "vcell",
 ]
 
