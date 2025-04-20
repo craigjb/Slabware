@@ -530,7 +530,7 @@ impl<'a> driver::EndpointIn for Endpoint<'a, In> {
         poll_fn(|cx| {
             ENDPOINT_WAKERS[ep_index].register(cx.waker());
 
-            if is_endpoint_interrupt_set(&regs, ep_index) {
+            if is_endpoint_interrupt_set(&regs, ep_index) || !read_endpoint_reg(0).enable() {
                 disable_endpoint_interrupt(&regs, ep_index);
                 Poll::Ready(())
             } else {
@@ -550,7 +550,12 @@ impl<'a> driver::EndpointIn for Endpoint<'a, In> {
         if desc_w0.code() == 0 {
             Ok(())
         } else {
-            defmt::panic!("USB endpoint error ep={} code={}", ep_index, desc_w0.code())
+            defmt::warn!(
+                "[USB] endpoint error ep={} code={}",
+                ep_index,
+                desc_w0.code()
+            );
+            Err(EndpointError::Disabled)
         }
     }
 }
@@ -576,7 +581,7 @@ impl<'a> driver::EndpointOut for Endpoint<'a, Out> {
         poll_fn(|cx| {
             ENDPOINT_WAKERS[ep_index].register(cx.waker());
 
-            if is_endpoint_interrupt_set(&regs, ep_index) {
+            if is_endpoint_interrupt_set(&regs, ep_index) || !read_endpoint_reg(0).enable() {
                 disable_endpoint_interrupt(&regs, ep_index);
                 Poll::Ready(())
             } else {
@@ -597,7 +602,12 @@ impl<'a> driver::EndpointOut for Endpoint<'a, Out> {
         } else if desc_w0.offset() as usize > buf.len() {
             Err(EndpointError::BufferOverflow)
         } else {
-            defmt::panic!("USB endpoint error code: {}", desc_w0.code())
+            defmt::warn!(
+                "[USB] endpoint error ep={} code={}",
+                ep_index,
+                desc_w0.code()
+            );
+            Err(EndpointError::Disabled)
         }
     }
 }
@@ -739,6 +749,8 @@ impl driver::Bus for Bus {
                     .interrupt()
                     .write(|w| w.disconnect().clear_bit_by_one());
                 self.connected = false;
+                self.clear_address();
+                self.disable_all_endpoints();
                 self.regs
                     .interrupt()
                     .write(|w| w.disconnect().clear_bit_by_one());
@@ -870,7 +882,7 @@ impl ControlPipe {
         poll_fn(|cx| {
             ENDPOINT_WAKERS[0].register(cx.waker());
 
-            if is_endpoint_interrupt_set(&regs, 0) {
+            if is_endpoint_interrupt_set(&regs, 0) || !read_endpoint_reg(0).enable() {
                 disable_endpoint_interrupt(&regs, 0);
                 Poll::Ready(())
             } else {
@@ -958,7 +970,7 @@ impl driver::ControlPipe for ControlPipe {
         poll_fn(|cx| {
             ENDPOINT_WAKERS[0].register(cx.waker());
 
-            if is_endpoint_interrupt_set(&regs, 0) {
+            if is_endpoint_interrupt_set(&regs, 0) || !read_endpoint_reg(0).enable() {
                 disable_endpoint_interrupt(&regs, 0);
                 Poll::Ready(())
             } else {
@@ -979,7 +991,8 @@ impl driver::ControlPipe for ControlPipe {
         } else if desc_w0.offset() as usize > buf.len() {
             Err(EndpointError::BufferOverflow)
         } else {
-            defmt::panic!("USB endpoint error code: {}", desc_w0.code())
+            defmt::warn!("[USB] endpoint error ep=0 code={}", desc_w0.code());
+            Err(EndpointError::Disabled)
         }
     }
 
@@ -1016,7 +1029,7 @@ impl driver::ControlPipe for ControlPipe {
         poll_fn(|cx| {
             ENDPOINT_WAKERS[0].register(cx.waker());
 
-            if is_endpoint_interrupt_set(&regs, 0) {
+            if is_endpoint_interrupt_set(&regs, 0) || !read_endpoint_reg(0).enable() {
                 disable_endpoint_interrupt(&regs, 0);
                 Poll::Ready(())
             } else {
@@ -1048,7 +1061,8 @@ impl driver::ControlPipe for ControlPipe {
         if desc_w0.code() == 0 {
             Ok(())
         } else {
-            defmt::panic!("USB endpoint error code: {}", desc_w0.code())
+            defmt::warn!("[USB] endpoint error ep=0 code={}", desc_w0.code());
+            Err(EndpointError::Disabled)
         }
     }
 
