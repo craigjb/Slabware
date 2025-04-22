@@ -53,10 +53,9 @@ async fn main(spawner: Spawner) {
         i2cm,
         peripherals.hdmi_rx,
         peripherals.lcd_dim,
-        peripherals.grid_ctrl
     )));
 
-    usb_keys::run_usb_keys(usb_driver).await;
+    usb_keys::run_usb_keys(usb_driver, peripherals.grid_ctrl).await;
 }
 
 #[export_name = "ExceptionHandler"]

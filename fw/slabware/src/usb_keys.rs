@@ -4,12 +4,99 @@ use crate::usb_driver::Driver;
 use embassy_futures::join::join3;
 use embassy_time::Timer;
 use embassy_usb::{class::hid, control::OutResponse, Handler};
+use slab_pac::GridCtrl;
 use usbd_hid::descriptor::{KeyboardReport, SerializedDescriptor};
 
-const KEYBOARD_POLL_MS: u64 = 40;
+const KEYBOARD_POLL_MS: u64 = 25;
 static KEYBOARD_READY: AtomicBool = AtomicBool::new(false);
 
-pub async fn run_usb_keys(usb_driver: Driver<'_>) {
+// organized by column, then row from bottom to top
+const SCAN_CODE_MAP: [[u8; 8]; 18] = [
+    [95, 94, 93, 92, 91, 90, 89, 98],
+    [96, 117, 118, 123, 124, 125, 126, 120],
+    [97, 121, 116, 53, 43, 41, 225, 224],
+    [146, 104, 58, 30, 20, 4, 29, 227],
+    [103, 105, 59, 31, 26, 22, 27, 226],
+    [127, 106, 60, 32, 8, 7, 6, 135],
+    [129, 107, 61, 33, 21, 9, 25, 136],
+    [128, 108, 62, 34, 23, 10, 5, 44],
+    [148, 109, 63, 35, 28, 11, 17, 140],
+    [147, 110, 64, 36, 24, 13, 16, 137],
+    [122, 111, 65, 37, 12, 14, 54, 138],
+    [83, 112, 66, 38, 18, 15, 55, 230],
+    [72, 113, 67, 39, 19, 51, 56, 231],
+    [119, 114, 68, 45, 47, 52, 229, 228],
+    [71, 115, 69, 46, 48, 40, 145, 80],
+    [74, 77, 139, 42, 50, 88, 82, 81],
+    [75, 78, 144, 76, 101, 100, 70, 79],
+    [182, 183, 84, 85, 86, 87, 99, 133],
+];
+
+// Reads each column of keys, 1 byte per column.
+// Byte 0 (col 0) is farthest left.
+// Bit 0 of each byte == row 0.
+fn scan_grid(grid_ctrl: &GridCtrl) -> [u8; 18] {
+    let column_base_ptr = grid_ctrl.col0key_state().as_ptr();
+    let mut values = [0; 18];
+    for (col, value) in values.iter_mut().enumerate() {
+        unsafe {
+            *value = column_base_ptr.add(col).read_volatile() as u8;
+        }
+    }
+    values
+}
+
+#[derive(Clone, PartialEq)]
+struct ScanReport {
+    key_codes: [u8; 6],
+    modifiers: u8,
+}
+
+impl ScanReport {
+    fn new() -> Self {
+        Self {
+            key_codes: [0; 6],
+            modifiers: 0,
+        }
+    }
+}
+
+fn report_scan_codes(scan: &[u8; 18]) -> ScanReport {
+    let mut report = ScanReport::new();
+    let mut key_index = 0;
+    for (col_scan, col_map) in scan.iter().zip(SCAN_CODE_MAP.iter()) {
+        for (bit, scan_code) in col_map.iter().enumerate() {
+            if col_scan & (1 << bit) != 0 && key_index <= 6 {
+                match scan_code {
+                    // left ctrl
+                    224 => report.modifiers |= 1 << 0,
+                    // left shift
+                    225 => report.modifiers |= 1 << 1,
+                    // left alt
+                    226 => report.modifiers |= 1 << 2,
+                    // left meta
+                    227 => report.modifiers |= 1 << 3,
+                    // right ctrl
+                    228 => report.modifiers |= 1 << 4,
+                    // right shift
+                    229 => report.modifiers |= 1 << 5,
+                    // right alt
+                    230 => report.modifiers |= 1 << 6,
+                    // right meta
+                    231 => report.modifiers |= 1 << 7,
+                    _ => {
+                        // non-modifier key
+                        report.key_codes[key_index] = *scan_code;
+                        key_index += 1;
+                    }
+                }
+            }
+        }
+    }
+    report
+}
+
+pub async fn run_usb_keys(usb_driver: Driver<'_>, grid_ctrl: GridCtrl) {
     let mut config = embassy_usb::Config::new(0xc0de, 0xcafe);
     config.manufacturer = Some("craigjb.com");
     config.product = Some("SoundSlab");
@@ -48,39 +135,40 @@ pub async fn run_usb_keys(usb_driver: Driver<'_>) {
     let (hid_reader, mut hid_writer) = hid.split();
 
     let in_fut = async {
-        let msg: [u8; 16] = [
-            0x16, 0x12, 0x18, 0x11, 0x07, 0x16, 0x0f, 0x04, 0x05, 0x2c, 0x15, 0x18, 0x0f, 0x08,
-            0x16, 0x28,
-        ];
-        let modifiers: [u8; 16] = [0x02, 0, 0, 0, 0, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let mut prev_report = ScanReport::new();
         loop {
-            for (code, modifier) in msg.iter().zip(modifiers.iter()) {
-                Timer::after_millis(500).await;
-                if !KEYBOARD_READY.load(Ordering::Relaxed) {
-                    continue;
-                }
-                defmt::info!("Writing keyboard report");
-                let report = KeyboardReport {
-                    keycodes: [*code, 0, 0, 0, 0, 0],
-                    leds: 0,
-                    modifier: *modifier,
-                    reserved: 0,
-                };
-                match hid_writer.write_serialize(&report).await {
-                    Ok(()) => {}
-                    Err(e) => defmt::warn!("[USB Keys] failed to send report: {:?}", e),
-                };
-                let report = KeyboardReport {
-                    keycodes: [0, 0, 0, 0, 0, 0],
-                    leds: 0,
-                    modifier: 0,
-                    reserved: 0,
-                };
-                match hid_writer.write_serialize(&report).await {
-                    Ok(()) => {}
-                    Err(e) => defmt::warn!("[USB Keys] failed to send report: {:?}", e),
-                };
+            Timer::after_millis(KEYBOARD_POLL_MS).await;
+            if !KEYBOARD_READY.load(Ordering::Relaxed) {
+                continue;
             }
+
+            let report = report_scan_codes(&scan_grid(&grid_ctrl));
+            if report == prev_report {
+                defmt::trace!(
+                    "[USB Keys] No key state change modifiers={:#02x} keycodes={}",
+                    report.modifiers,
+                    report.key_codes,
+                );
+                continue;
+            } else {
+                prev_report = report.clone();
+            }
+
+            defmt::trace!(
+                "[USB Keys] No key state change modifiers={:#02x} keycodes={}",
+                report.modifiers,
+                report.key_codes
+            );
+            let report = KeyboardReport {
+                keycodes: report.key_codes,
+                leds: 0,
+                modifier: report.modifiers,
+                reserved: 0,
+            };
+            match hid_writer.write_serialize(&report).await {
+                Ok(()) => {}
+                Err(e) => defmt::warn!("[USB Keys] failed to send report: {:?}", e),
+            };
         }
     };
 

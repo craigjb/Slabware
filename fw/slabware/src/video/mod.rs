@@ -12,30 +12,31 @@ use slab_pac::{GridCtrl, HdmiRx, LcdDim};
 struct Video {
     hdmi_rx: Hdmi,
     lcd_dim: LcdDim,
-    grid_ctrl: GridCtrl,
 }
 
 impl Video {
-    fn new(hdmi_peripheral: HdmiRx, lcd_dim: LcdDim, grid_ctrl: GridCtrl) -> Self {
+    fn new(hdmi_peripheral: HdmiRx, lcd_dim: LcdDim) -> Self {
         let hdmi_rx = hdmi::Hdmi::new(hdmi_peripheral);
         defmt::info!("[HDMI] Asserting HPD");
         hdmi_rx.enable_hpd();
 
-        Self {
-            hdmi_rx,
-            lcd_dim,
-            grid_ctrl,
-        }
+        Self { hdmi_rx, lcd_dim }
     }
 
     fn enable_output(&self) {
         self.lcd_dim.control().write(|w| w.enable().set_bit());
-        self.grid_ctrl.control().write(|w| w.enable().set_bit());
+        unsafe {
+            let grid_ctrl = GridCtrl::steal();
+            grid_ctrl.control().write(|w| w.enable().set_bit());
+        }
     }
 
     fn disable_output(&self) {
         self.lcd_dim.control().write(|w| w.enable().clear_bit());
-        self.grid_ctrl.control().write(|w| w.enable().clear_bit());
+        unsafe {
+            let grid_ctrl = GridCtrl::steal();
+            grid_ctrl.control().write(|w| w.enable().clear_bit());
+        }
     }
 
     async fn task_loop(&self) {
@@ -113,12 +114,7 @@ impl Video {
 }
 
 #[embassy_executor::task]
-pub async fn video_task(
-    i2cm: I2cMaster,
-    hdmi_peripheral: HdmiRx,
-    lcd_dim: LcdDim,
-    grid_ctrl: GridCtrl,
-) {
+pub async fn video_task(i2cm: I2cMaster, hdmi_peripheral: HdmiRx, lcd_dim: LcdDim) {
     let _retimer = unwrap!(
         tmds181::Tmds181Config::new()
             .address(0x5C)
@@ -130,6 +126,6 @@ pub async fn video_task(
     );
     defmt::info!("[HDMI] Retimer configured");
 
-    let video = Video::new(hdmi_peripheral, lcd_dim, grid_ctrl);
+    let video = Video::new(hdmi_peripheral, lcd_dim);
     video.task_loop().await
 }
